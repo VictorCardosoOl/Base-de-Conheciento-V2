@@ -123,7 +123,7 @@ export default function QueuePage() {
               className="glass-card"
               title="Nenhum artigo salvo ainda"
               icon={<Bookmark size={20} aria-hidden="true" />}
-              action={<ButtonLink href="/" variant="primary" size="sm">Explorar artigos</ButtonLink>}
+              action={<ButtonLink href="/artigos" variant="primary" size="sm">Explorar artigos</ButtonLink>}
             >
               Use o botão de salvar nos cards ou “Salvar” dentro do artigo para montar sua lista.
             </EmptyState>

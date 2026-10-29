@@ -103,7 +103,7 @@ export const ArticleGrid = ({
         {items.map((item, idx) => (
           <li
             key={item.id}
-            className="h-full [content-visibility:auto] [contain-intrinsic-size:auto_220px]"
+            className="h-full"
           >
             <CardItem
               item={item}

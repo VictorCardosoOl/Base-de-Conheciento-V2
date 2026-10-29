@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
-  ResponsiveContainer,
   AreaChart,
   Area,
   BarChart,
@@ -28,6 +27,56 @@ import {
 import { useCardSpotlight } from '../hooks/useInteractiveHooks';
 
 type ChartVisualizationMode = 'area' | 'bars' | 'audit';
+
+function useContainerDimensions(defaultHeight = 360, defaultWidth = 640) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({
+    width: defaultWidth,
+    height: defaultHeight,
+  });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 20) {
+        setDimensions({
+          width: Math.floor(rect.width),
+          height: Math.floor(rect.height) || defaultHeight,
+        });
+      }
+    };
+
+    measure();
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const w = entry.contentRect.width;
+          const h = entry.contentRect.height;
+          if (w > 20) {
+            setDimensions({
+              width: Math.floor(w),
+              height: Math.floor(h) || defaultHeight,
+            });
+          }
+        }
+      });
+      ro.observe(el);
+    }
+
+    window.addEventListener('resize', measure);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [defaultHeight, defaultWidth]);
+
+  return { containerRef, dimensions };
+}
 
 interface CustomTooltipPayloadItem {
   name?: string;
@@ -81,6 +130,8 @@ export const EsocialComplianceAnalytics: React.FC = () => {
   const [eventFilter, setEventFilter] = useState<EsocialEventFilter>('ALL');
   const [chartMode, setChartMode] = useState<ChartVisualizationMode>('area');
   const [isMounted, setIsMounted] = useState(false);
+  const mainChart = useContainerDimensions(370, 640);
+  const breakdownChart = useContainerDimensions(135, 340);
 
   useEffect(() => {
     setIsMounted(true);
@@ -362,7 +413,8 @@ export const EsocialComplianceAnalytics: React.FC = () => {
           </div>
 
           <div
-            className="w-full min-h-[340px] h-[340px] sm:h-[370px] 2xl:h-[400px] relative"
+            ref={mainChart.containerRef}
+            className="w-full min-h-[340px] h-[340px] sm:h-[370px] 2xl:h-[400px] relative overflow-hidden"
             data-testid="recharts-primary-canvas"
           >
             {!isMounted ? (
@@ -370,9 +422,11 @@ export const EsocialComplianceAnalytics: React.FC = () => {
                 Carregando indicadores de conformidade...
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
+              <div className="w-full h-full">
                 {chartMode === 'area' ? (
                   <AreaChart
+                    width={mainChart.dimensions.width}
+                    height={mainChart.dimensions.height}
                     data={dataset}
                     margin={{ top: 16, right: 20, left: -10, bottom: 6 }}
                   >
@@ -430,6 +484,8 @@ export const EsocialComplianceAnalytics: React.FC = () => {
                   </AreaChart>
                 ) : chartMode === 'bars' ? (
                   <BarChart
+                    width={mainChart.dimensions.width}
+                    height={mainChart.dimensions.height}
                     data={dataset}
                     margin={{ top: 16, right: 20, left: -10, bottom: 6 }}
                   >
@@ -485,6 +541,8 @@ export const EsocialComplianceAnalytics: React.FC = () => {
                   </BarChart>
                 ) : (
                   <ComposedChart
+                    width={mainChart.dimensions.width}
+                    height={mainChart.dimensions.height}
                     data={dataset}
                     margin={{ top: 16, right: 20, left: -10, bottom: 6 }}
                   >
@@ -534,7 +592,7 @@ export const EsocialComplianceAnalytics: React.FC = () => {
                     />
                   </ComposedChart>
                 )}
-              </ResponsiveContainer>
+              </div>
             )}
           </div>
 
@@ -559,39 +617,42 @@ export const EsocialComplianceAnalytics: React.FC = () => {
           </div>
 
           {/* Horizontal Recharts Bar Comparison */}
-          <div className="w-full min-h-[135px] h-[135px]">
+          <div
+            ref={breakdownChart.containerRef}
+            className="w-full min-h-[135px] h-[135px] relative overflow-hidden"
+          >
             {!isMounted ? (
               <div className="w-full h-full rounded-xl bg-black/5 dark:bg-white/5 animate-pulse" />
             ) : (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={135}>
-                <BarChart
-                  data={[...ESOCIAL_EVENT_BREAKDOWNS]}
-                  layout="vertical"
-                  margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+              <BarChart
+                width={breakdownChart.dimensions.width}
+                height={135}
+                data={[...ESOCIAL_EVENT_BREAKDOWNS]}
+                layout="vertical"
+                margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+              >
+                <XAxis type="number" domain={[95, 100]} hide />
+                <YAxis
+                  type="category"
+                  dataKey="code"
+                  width={54}
+                  tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip content={<FrostedChartTooltip />} />
+                <Bar
+                  dataKey="compliancePct"
+                  name="Conformidade (%)"
+                  radius={[0, 6, 6, 0]}
+                  barSize={14}
                 >
-                  <XAxis type="number" domain={[95, 100]} hide />
-                  <YAxis
-                    type="category"
-                    dataKey="code"
-                    width={54}
-                    tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip content={<FrostedChartTooltip />} />
-                  <Bar
-                    dataKey="compliancePct"
-                    name="Conformidade (%)"
-                    radius={[0, 6, 6, 0]}
-                    barSize={14}
-                  >
-                    {ESOCIAL_EVENT_BREAKDOWNS.map((entry, idx) => {
-                      const tones = ['#2E665A', '#4A728A', '#6E8A9C', '#94A3B8'];
-                      return <Cell key={entry.code} fill={tones[idx % tones.length]} />;
-                    })}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                  {ESOCIAL_EVENT_BREAKDOWNS.map((entry, idx) => {
+                    const tones = ['#2E665A', '#4A728A', '#6E8A9C', '#94A3B8'];
+                    return <Cell key={entry.code} fill={tones[idx % tones.length]} />;
+                  })}
+                </Bar>
+              </BarChart>
             )}
           </div>
 

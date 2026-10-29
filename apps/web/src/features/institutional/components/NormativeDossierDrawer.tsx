@@ -34,9 +34,9 @@ const DOSSIER_SLUG_MAP: Record<string, string> = {
   'NR-07': 'pcmso',
   'NR-15': 'diferenca-li-lp',
   'NR-16': 'diferenca-li-lp',
-  'LTCAT': 'LTCAT',
+  'LTCAT': 'ltcat',
   'PPP': 'ppp',
-  'e-CAC': 'Ecac',
+  'e-CAC': 'ecac',
   'STF 555': 'aposentadoria-especial',
 };
 

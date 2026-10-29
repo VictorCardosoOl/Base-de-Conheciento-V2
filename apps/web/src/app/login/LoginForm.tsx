@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import Link from 'next/link';
 import { Eye, EyeOff, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
-import { SunburstEmblem } from '@/features/institutional/components/SunburstEmblem';
 import { login, refreshSession, type LoginResult } from '@/features/auth/client';
 import { clearAuthReturn, isAuthReturnLoop, markAuthReturn } from '@/features/auth/return-guard';
 import { hardNavigate } from '@/lib/navigation';
@@ -127,36 +126,13 @@ export function LoginForm({
     <AuthSplitLayout>
       <div className="w-full space-y-6">
         {/* Cabeçalho Minimalista Sem Bordas */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-2.5">
-              <SunburstEmblem size={24} strokeColor="#B27E29" dotColor="#B27E29" />
-              <div className="leading-tight">
-                <span className="block text-xs font-semibold tracking-tight text-[var(--text-primary)]">
-                  Base <span className="text-[#B27E29]">SST</span>
-                </span>
-                <span className="block text-[11px] text-[var(--text-muted)]">
-                  Plataforma de Engenharia SST &amp; eSocial
-                </span>
-              </div>
-            </div>
-
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-3 py-1.5 rounded-lg bg-[#ECE9E2]/70 dark:bg-white/[0.05] hover:bg-[#ECE9E2] dark:hover:bg-white/[0.1]"
-            >
-              <span>← Início</span>
-            </Link>
-          </div>
-
-          <div className="pt-2 space-y-2">
-            <h1 className="font-editorial text-4xl sm:text-[2.6rem] font-normal tracking-tight text-[var(--text-primary)] leading-[1.08]">
-              Bem-vindo, acesse sua conta.
-            </h1>
-            <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Consulte os cadernos operacionais de GRO/PGR, LTCAT, eventos S-2210 a S-2240 e matrizes de conformidade.
-            </p>
-          </div>
+        <div className="space-y-2">
+          <h1 className="font-editorial text-4xl sm:text-[2.6rem] font-normal tracking-tight text-[var(--text-primary)] leading-[1.08]">
+            Bem-vindo, acesse sua conta.
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+            Consulte os cadernos operacionais de GRO/PGR, LTCAT, eventos S-2210 a S-2240 e matrizes de conformidade.
+          </p>
         </div>
 
         {notice && !error && (

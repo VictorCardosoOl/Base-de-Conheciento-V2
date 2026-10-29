@@ -10,8 +10,6 @@ import { useConsent } from '@/features/consent/ConsentContext';
 import { useReadingQueue } from '@/features/reading/use-reading-queue';
 import { initTelemetry, stopTelemetry } from '@/features/analytics/telemetry';
 import { SessionSummaryContext, useSessionSummary } from '@/features/auth/use-session-summary';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
 import { Category, FAQItem } from '@/features/articles/types';
 import { useThemePreference } from '../use-theme-preference';
 import { useCommandPaletteShortcuts } from '../use-command-palette-shortcuts';
@@ -94,35 +92,29 @@ function ClientLayoutContent({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Transição entre páginas: o conteúdo assenta (só transform e opacity, curta). Abrir ou
-  // fechar um artigo não anima o fundo: o artigo vem por cima (modal) e o resto fica parado.
+  // Ao navegar entre páginas (exceto abertura/fechamento de modal de artigo),
+  // garante que a rolagem volte imediatamente ao topo (y = 0) sem travar no meio da página.
   const previousPath = useRef(pathname);
-  useGSAP(() => {
+  useEffect(() => {
     const from = previousPath.current;
     previousPath.current = pathname;
-    if (!containerRef.current || from === pathname) return;
+    if (from === pathname) return;
     if (from?.startsWith('/artigo/') || pathname?.startsWith('/artigo/')) return;
-    const mm = gsap.matchMedia();
-    mm.add('(prefers-reduced-motion: no-preference)', () => {
-      gsap.fromTo(
-        containerRef.current,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.32, ease: 'expo.out', overwrite: 'auto', clearProps: 'transform,opacity' }
-      );
-    });
-    return () => mm.revert();
+    if (typeof window !== 'undefined' && !window.location.hash) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
   }, [pathname]);
 
   // Nas rotas de login/cadastro (e /sobre público), exibe exatamente a mesma InstitutionalNavbar e InstitutionalFooter da Home (/)
   const useInstitutionalChrome =
     !isInstitutionalLanding && (isAuthRoute || (pathname === '/sobre' && !isAuthenticated));
 
-  const sidebar = useInstitutionalChrome ? (
+  const sidebar = isInstitutionalLanding ? null : useInstitutionalChrome ? (
     <InstitutionalNavbar
       activeSection={pathname === '/sobre' ? 'sobre-page' : 'hero'}
       onOpenLogin={() => router.push('/login')}
     />
-  ) : isInstitutionalLanding && !isAuthenticated ? null : (
+  ) : (
     <Sidebar
       currentCat={effectiveCategory}
       onSelect={handleCategorySelect}
@@ -135,7 +127,7 @@ function ClientLayoutContent({
     />
   );
 
-  const commandPalette = isCommandPaletteOpen && (
+  const commandPalette = !isInstitutionalLanding && isCommandPaletteOpen && (
     <Suspense fallback={null}>
       <CommandPalette
         isOpen={isCommandPaletteOpen}
@@ -155,52 +147,33 @@ function ClientLayoutContent({
     </Suspense>
   );
 
+  const mainWrapperClass = isInstitutionalLanding
+    ? 'w-full'
+    : isAuthRoute
+      ? 'w-full pt-16 sm:pt-20'
+      : isArticleRoute
+        ? 'max-w-[2000px] 3xl:max-w-[2240px] 4xl:max-w-[2560px] mx-auto w-full px-4 sm:px-8 md:px-12 2xl:px-16 3xl:px-24 4xl:px-32 pt-20 md:pt-24 2xl:pt-32 pb-16 2xl:pb-24'
+        : `max-w-[2000px] 3xl:max-w-[2240px] 4xl:max-w-[2560px] mx-auto w-full pb-12 2xl:pb-20 3xl:pb-28 4xl:pb-36 ${MAIN_LAYOUT_PADDING_CLASS}`;
+
   return (
     <SessionSummaryContext.Provider value={session}>
-      {isInstitutionalLanding ? (
-        <>
-          <div className="relative z-10 flex min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] selection:bg-selection">
-            <main className="flex-1 w-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] relative">
-              <div className="w-full">
-                <div ref={containerRef} className="w-full">
-                  {children}
-                </div>
-              </div>
-            </main>
-          </div>
-          <Suspense fallback={null}>
-            <BackToTopButton />
-            <CookieBanner />
-          </Suspense>
-        </>
-      ) : (
-        <SmoothScroll>
-          <LiquidGlassEffects />
-          {/* Conteúdo acima do fundo (z-10). */}
-          <div className="relative z-10 flex min-h-screen selection:bg-selection">
-            {sidebar}
-            {commandPalette}
+      <SmoothScroll>
+        {!isInstitutionalLanding && <LiquidGlassEffects />}
+        <div className="relative z-10 flex min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] selection:bg-selection">
+          {sidebar}
+          {commandPalette}
 
-            <main
-              className="flex-1 w-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] relative"
-            >
-              <div
-                className={`max-w-[2000px] 3xl:max-w-[2240px] 4xl:max-w-[2560px] mx-auto w-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
-                            ${
-                              isArticleRoute
-                                ? 'px-4 sm:px-8 md:px-12 2xl:px-16 3xl:px-24 4xl:px-32 pt-20 md:pt-24 2xl:pt-32 pb-16 2xl:pb-24'
-                                : `px-5 sm:px-8 2xl:px-16 3xl:px-24 4xl:px-32 max-lg:pt-24 max-lg:pb-12 lg:pt-28 lg:pb-12 2xl:pb-20 3xl:pb-28 4xl:pb-36 ${MAIN_LAYOUT_PADDING_CLASS}`
-                            }
-                        `}
-              >
-                <div ref={containerRef} className="w-full">
-                  {children}
-                </div>
+          <main className="flex-1 w-full relative">
+            <div className={mainWrapperClass}>
+              <div ref={containerRef} className="w-full">
+                {children}
               </div>
-            </main>
-          </div>
+            </div>
+          </main>
+        </div>
 
-          {useInstitutionalChrome ? (
+        {!isInstitutionalLanding &&
+          (useInstitutionalChrome ? (
             <InstitutionalFooter
               onOpenLogin={() => router.push('/login')}
               onOpenRegister={() => router.push('/cadastro')}
@@ -208,14 +181,13 @@ function ClientLayoutContent({
             />
           ) : (
             <Footer />
-          )}
+          ))}
 
-          <Suspense fallback={null}>
-            <BackToTopButton />
-            <CookieBanner />
-          </Suspense>
-        </SmoothScroll>
-      )}
+        <Suspense fallback={null}>
+          <BackToTopButton />
+          <CookieBanner />
+        </Suspense>
+      </SmoothScroll>
     </SessionSummaryContext.Provider>
   );
 }

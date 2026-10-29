@@ -80,7 +80,7 @@ const KNOWLEDGE_BASE: readonly SearchItem[] = [
       'PGR foca em gestão contínua e prevenção trabalhista (NR-01). LTCAT possui finalidade exclusivamente previdenciária para caracterização do PPP.',
     tags: ['PGR', 'LTCAT', 'NR-01', 'Inventário de Riscos', 'Previdenciário'],
     latencyMs: 3.1,
-    slug: 'LTCAT',
+    slug: 'ltcat',
   },
   {
     id: 'insalubridade-periculosidade',
@@ -102,7 +102,7 @@ const KNOWLEDGE_BASE: readonly SearchItem[] = [
       'Tratativa de erros comuns de recepção e processamento (Código 401, 403, 162), assinatura digital via certificado A1/A3 e regras de lote.',
     tags: ['XML', 'XSD', 'Erro 401', 'Assinatura Digital', 'SOAP e-CAC'],
     latencyMs: 3.9,
-    slug: 'informacoes-xml',
+    slug: 'informa--es-sobre-o-xml',
   },
   {
     id: 'aposentadoria-especial',

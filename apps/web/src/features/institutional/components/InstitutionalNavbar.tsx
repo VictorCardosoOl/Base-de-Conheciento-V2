@@ -101,14 +101,17 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
 
     const updateOnScroll = () => {
       rafId = 0;
-      const currentY = window.scrollY;
+      const currentY =
+        typeof window !== 'undefined'
+          ? Math.max(0, window.pageYOffset ?? window.scrollY ?? document.documentElement?.scrollTop ?? document.body?.scrollTop ?? 0)
+          : 0;
 
       const nextState = evaluateSmartNavbarScroll({
         currentScrollY: currentY,
         prevScrollY: lastScrollYRef.current,
         prevHidden: isHiddenRef.current,
         mobileMenuOpen: mobileMenuOpenRef.current,
-        threshold: 8,
+        threshold: 6,
         topOffset: 16,
       });
 
@@ -128,7 +131,8 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
       }
 
       if (barEl) {
-        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollElem = document.documentElement || document.body;
+        const maxScroll = (scrollElem ? scrollElem.scrollHeight : 0) - window.innerHeight;
         const pct = calculateReadingProgress(currentY, maxScroll);
         barEl.style.transform = `scaleX(${(pct / 100).toFixed(4)})`;
       }
@@ -141,9 +145,12 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener('scroll', handleScroll, { passive: true });
     updateOnScroll();
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('scroll', handleScroll);
       if (rafId) cancelAnimationFrame(rafId);
     };
   }, []);
@@ -179,16 +186,16 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
     <header
       data-testid="smart-navbar"
       data-navbar-state={effectiveHidden ? 'hidden' : isElevated ? 'elevated' : 'top'}
-      className={`fixed top-0 left-0 right-0 z-50 will-change-transform transition-[transform,opacity,background-color,box-shadow,border-color,padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border-b ${
+      className={`fixed top-0 left-0 right-0 z-50 will-change-transform transition-[transform,opacity,background-color,box-shadow,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border-b ${
         effectiveHidden
           ? '-translate-y-full opacity-0 pointer-events-none'
           : 'translate-y-0 opacity-100'
       } ${
         isElevated || mobileMenuOpen
-          ? 'bg-[var(--bg-glass-strong)] backdrop-blur-2xl border-[var(--border-hairline)] shadow-[0_12px_32px_-12px_rgba(0,0,0,0.22)] py-2.5 sm:py-3.5 2xl:py-4'
+          ? 'bg-[var(--bg-glass-strong)] backdrop-blur-2xl border-[var(--border-hairline)] shadow-[0_12px_32px_-12px_rgba(0,0,0,0.22)] py-3 sm:py-3.5 2xl:py-4'
           : atTop
           ? 'bg-[var(--bg-glass)] backdrop-blur-md border-[var(--border-hairline)] shadow-none py-3.5 sm:py-4 2xl:py-5'
-          : 'bg-[var(--bg-glass-strong)] backdrop-blur-xl border-[var(--border-hairline)] py-3 sm:py-3.5'
+          : 'bg-[var(--bg-glass-strong)] backdrop-blur-xl border-[var(--border-hairline)] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.18)] py-3 sm:py-3.5'
       }`}
     >
       <nav

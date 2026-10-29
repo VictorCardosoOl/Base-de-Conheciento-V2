@@ -136,6 +136,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${inter.variable} ${playfair.variable} ${lexend.variable}`}
     >
