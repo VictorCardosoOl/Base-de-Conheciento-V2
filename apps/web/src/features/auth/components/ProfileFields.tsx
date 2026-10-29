@@ -4,7 +4,6 @@ import type { ProfessionalArea } from '@/features/auth/client';
 
 export const ORGANIZATION_MAX_LENGTH = 120;
 
-/** Mesma lista fechada do AuthService (ADR-0014): sem texto livre com dados pessoais. */
 export const PROFESSIONAL_AREAS: ReadonlyArray<{
   value: ProfessionalArea;
   label: string;
@@ -20,8 +19,7 @@ export const PROFESSIONAL_AREAS: ReadonlyArray<{
 ];
 
 /**
- * Perfil complementar, todo opcional (minimização da LGPD): organização e área de
- * atuação. Nada além disso é pedido no cadastro.
+ * Perfil complementar em grade 2 colunas, todo opcional e sem bordas divisórias.
  */
 export function ProfileFields({
   idPrefix,
@@ -43,49 +41,57 @@ export function ProfileFields({
   const hintId = `${idPrefix}-profile-hint`;
   return (
     <fieldset
-      className="space-y-3 glass-flat p-4"
+      className="pt-2 space-y-3 border-0 p-0 m-0"
       aria-describedby={hintId}
     >
-      <legend className={`px-1 ${labelClass}`}>Perfil (opcional)</legend>
-      <p id={hintId} className="text-xs text-text-muted">
-        Ajuda a destacar os conteúdos mais úteis para você e dá contexto a um
-        pedido de acesso de editor. Pode deixar em branco.
-      </p>
-      <div className="space-y-1">
-        <label htmlFor={`${idPrefix}-organization`} className={labelClass}>
-          Organização
-        </label>
-        <input
-          id={`${idPrefix}-organization`}
-          type="text"
-          autoComplete="organization"
-          value={organization}
-          onChange={(event) => onOrganizationChange(event.target.value)}
-          maxLength={ORGANIZATION_MAX_LENGTH}
-          className={inputClass}
-        />
+      <div className="flex items-center justify-between gap-2 px-1">
+        <legend className="text-[11px] font-tabular uppercase tracking-[0.12em] text-[var(--accent-editorial)] font-semibold">
+          Contexto Profissional · Opcional
+        </legend>
+        <span id={hintId} className="text-[11px] text-[var(--text-muted)]">
+          Personaliza sua trilha SST
+        </span>
       </div>
-      <div className="space-y-1">
-        <label htmlFor={`${idPrefix}-area`} className={labelClass}>
-          Área de atuação
-        </label>
-        <select
-          id={`${idPrefix}-area`}
-          value={professionalArea}
-          onChange={(event) =>
-            onProfessionalAreaChange(
-              event.target.value as ProfessionalArea | ''
-            )
-          }
-          className={`${inputClass} bg-bg-island`}
-        >
-          <option value="">Prefiro não informar</option>
-          {PROFESSIONAL_AREAS.map((area) => (
-            <option key={area.value} value={area.value}>
-              {area.label}
-            </option>
-          ))}
-        </select>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className="space-y-1.5">
+          <label htmlFor={`${idPrefix}-organization`} className={labelClass}>
+            Organização
+          </label>
+          <input
+            id={`${idPrefix}-organization`}
+            type="text"
+            autoComplete="organization"
+            value={organization}
+            onChange={(event) => onOrganizationChange(event.target.value)}
+            maxLength={ORGANIZATION_MAX_LENGTH}
+            placeholder="Empresa ou consultoria"
+            className={inputClass}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor={`${idPrefix}-area`} className={labelClass}>
+            Área de atuação
+          </label>
+          <select
+            id={`${idPrefix}-area`}
+            value={professionalArea}
+            onChange={(event) =>
+              onProfessionalAreaChange(
+                event.target.value as ProfessionalArea | ''
+              )
+            }
+            className={inputClass}
+          >
+            <option value="">Prefiro não informar</option>
+            {PROFESSIONAL_AREAS.map((area) => (
+              <option key={area.value} value={area.value}>
+                {area.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </fieldset>
   );

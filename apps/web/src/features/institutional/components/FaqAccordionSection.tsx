@@ -96,7 +96,7 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
     <section
       id="faq"
       data-testid="faq-accordion-section"
-      className="relative border-b border-[var(--border-hairline)] mesh-gradient-bento py-24 lg:py-32 2xl:py-40 overflow-hidden"
+      className="relative border-b border-[var(--border-hairline)] mesh-gradient-bento py-24 lg:py-32 2xl:py-40 3xl:py-48 4xl:py-56 overflow-hidden"
     >
       {/* Subtle Ambient Orbs for Depth */}
       <div
@@ -104,7 +104,7 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
         className="ambient-glass-orb-sage absolute top-12 left-1/2 -translate-x-1/2 w-[540px] h-[540px] rounded-full pointer-events-none opacity-40"
       />
 
-      <div className="relative z-10 w-full max-w-4xl 2xl:max-w-5xl mx-auto px-5 sm:px-8 lg:px-12">
+      <div className="relative z-10 w-full max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4xl:max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 2xl:px-16 3xl:px-24 4xl:px-32">
         {/* =================================================================== */}
         {/* Centered Editorial Header: Balanced, Elegant & Informative          */}
         {/* =================================================================== */}

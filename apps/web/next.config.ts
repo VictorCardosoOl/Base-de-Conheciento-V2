@@ -3,16 +3,20 @@ import { isAuthConfigured, parseAuthConfig } from './src/features/auth/config';
 import { securityHeaders } from './src/lib/security-headers';
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
   reactStrictMode: true,
   poweredByHeader: false,
   // `postcss` (dependência do sanitize-html) está na lista padrão de pacotes
   // externos do servidor, que o Turbopack liga via junction em .next/node_modules.
   // Empacotá-lo evita a junction, que falha em volumes sem suporte (ex.: FAT32).
-  transpilePackages: ['postcss'],
+  transpilePackages: ['postcss', 'mermaid'],
   // Habilita forbidden(): a única forma do App Router responder 403 numa página.
   // É experimental no Next 16; a decisão está registrada em docs/INTEGRACAO_AUTH.md.
   experimental: {
     authInterrupts: true,
+    turbopackFileSystemCacheForDev: false,
+    turbopackFileSystemCacheForBuild: false,
+    turbopackMemoryEviction: false,
   },
 
   // O navegador fala só com a origem do Next: /auth/* é repassado ao AuthService.

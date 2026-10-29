@@ -27,15 +27,15 @@ type Sort = 'relevance' | 'recent' | 'az';
 const RECENT = recentArticles(3);
 
 function chipClass(active: boolean) {
-  return `inline-flex shrink-0 items-center gap-2 rounded-[20px] px-4 py-2 min-h-10 text-xs sm:text-sm font-semibold tracking-wide transition-all duration-200 active:scale-95 glass-focus ${
+  return `inline-flex shrink-0 items-center gap-2 rounded-md px-3.5 py-1.5 min-h-9 text-xs sm:text-sm font-medium tracking-wide transition-colors duration-150 ${
     active
-      ? 'text-bg-main bg-text-main shadow-[var(--glass-shadow-2)] ring-1 ring-text-main/20'
-      : 'glass-flat !rounded-[20px] text-text-main/90 hover:text-text-main hover:bg-[var(--glass-bg-hover)] hover:shadow-xs'
+      ? 'text-white bg-[var(--accent-editorial)] shadow-xs'
+      : 'bg-[var(--bg-paper)] text-[var(--text-secondary)] border border-[var(--border-hairline)] hover:text-[var(--text-main)] hover:bg-[var(--bg-paper-warm)]'
   }`;
 }
 
 /**
- * Seleção de artigos: módulos em pílulas (filtro pela URL, para o menu e o voltar do
+ * Seleção de artigos: módulos em abas limpas (filtro pela URL, para o menu e o voltar do
  * navegador concordarem), filtro por texto dentro da lista, ordenação e, na visão geral,
  * os atualizados recentemente.
  */
@@ -82,7 +82,7 @@ export function HomeGrid({ categoryParam }: { categoryParam: string | null }) {
         <nav aria-label="Módulos" className="-mx-1 overflow-x-auto no-scrollbar">
           <ul className="flex gap-2 px-1 pb-1">
             <li>
-              <Link href="/" scroll={false} className={chipClass(!categoryParam)} aria-current={!categoryParam ? 'page' : undefined}>
+              <Link href="/artigos" scroll={false} className={chipClass(!categoryParam)} aria-current={!categoryParam ? 'page' : undefined}>
                 Todos
                 <span className="text-xs opacity-75 tabular-nums">{FAQ_DATA.length}</span>
               </Link>
@@ -90,7 +90,7 @@ export function HomeGrid({ categoryParam }: { categoryParam: string | null }) {
             {MODULES.filter((cat) => COUNTS.has(cat)).map((cat) => (
               <li key={cat}>
                 <Link
-                  href={`/?category=${encodeURIComponent(cat)}`}
+                  href={`/artigos?category=${encodeURIComponent(cat)}`}
                   scroll={false}
                   className={chipClass(categoryParam === cat)}
                   aria-current={categoryParam === cat ? 'page' : undefined}
@@ -134,7 +134,7 @@ export function HomeGrid({ categoryParam }: { categoryParam: string | null }) {
           <ul className="grid gap-3 md:grid-cols-3">
             {RECENT.map((item) => (
               <li key={item.id}>
-                <Link href={`/artigo/${item.id}`} scroll={false} className="glass-card glass-interactive glass-focus flex h-full flex-col gap-1.5 p-5">
+                <Link href={`/artigo/${item.id}`} scroll={false} className="rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] hover:border-[var(--border)] transition-colors duration-150 flex h-full flex-col gap-1.5 p-5">
                   <span className="text-xs text-text-muted">
                     {item.category} · {item.lastReviewed || item.date}
                   </span>

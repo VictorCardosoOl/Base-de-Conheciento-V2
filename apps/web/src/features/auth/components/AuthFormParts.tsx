@@ -31,7 +31,7 @@ export function AuthHeading({
 }) {
   return (
     <div className="flex flex-col items-center mb-8 text-center">
-      <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 text-[color:var(--mesh-1)] bg-[color:var(--tone-info-bg)]">
+      <div className="w-12 h-12 rounded-lg border border-[var(--border-hairline)] flex items-center justify-center mb-4 text-[color:var(--mesh-1)] bg-[color:var(--tone-info-bg)]">
         {icon}
       </div>
       <h1 className="text-2xl sm:text-3xl font-serif text-text-main">{title}</h1>

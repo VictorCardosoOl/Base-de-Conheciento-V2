@@ -1,22 +1,14 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { ArrowUp, Check, Printer, Share2 } from 'lucide-react';
 import { useShare } from '@/hooks/use-share';
 import { TableOfContents } from './TableOfContents';
 import { ArticleNeighbors } from './ArticleNeighbors';
 import { RelatedArticles } from './RelatedArticles';
 import { LazyMount } from '@/components/ui/LazyMount';
-// Avaliação, correção e comentários: código e requisições só perto do fim da leitura.
-const ArticleInteractions = dynamic(() =>
-  import('@/features/content/components/ArticleInteractions').then((mod) => mod.ArticleInteractions)
-);
+import { ArticleInteractions } from '@/features/content/components/ArticleInteractions';
 import { useReadingProgress } from '@/features/reading/use-reading-progress';
-
-const ArticleContent = dynamic(
-  () => import('./ArticleContent').then((mod) => mod.ArticleContent),
-  { loading: () => <div className="ui-skeleton h-32 !rounded-2xl" /> }
-);
+import { ArticleContent } from './ArticleContent';
 
 /**
  * Leitura na página do artigo: corpo em superfície quase opaca (contraste AA), índice de

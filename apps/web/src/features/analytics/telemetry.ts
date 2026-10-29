@@ -10,12 +10,27 @@ const RELEASE = process.env.NEXT_PUBLIC_APP_VERSION
 /** Campos removidos de qualquer payload enviado ao Sentry (LGPD — minimização). */
 const SENSITIVE_KEYS = /pass(word)?|senha|token|secret|authorization|cookie|email/i;
 
-function scrub<T>(value: T): T {
+export function scrub<T>(value: T, maxDepth = 6, seen = new WeakSet<object>()): T {
   if (!value || typeof value !== 'object') return value;
-  for (const key of Object.keys(value as Record<string, unknown>)) {
-    const record = value as Record<string, unknown>;
-    if (SENSITIVE_KEYS.test(key)) record[key] = '[Filtered]';
-    else scrub(record[key]);
+  if (seen.has(value as object)) return '[Circular]' as unknown as T;
+  if (maxDepth <= 0) return '[MaxDepth]' as unknown as T;
+
+  seen.add(value as object);
+
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i += 1) {
+      value[i] = scrub(value[i], maxDepth - 1, seen);
+    }
+    return value;
+  }
+
+  const record = value as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    if (SENSITIVE_KEYS.test(key)) {
+      record[key] = '[Filtered]';
+    } else {
+      record[key] = scrub(record[key], maxDepth - 1, seen);
+    }
   }
   return value;
 }
@@ -26,8 +41,9 @@ function beforeSend(event: ErrorEvent): ErrorEvent {
     delete event.request.cookies;
     delete event.request.headers;
   }
-  scrub(event.extra);
-  scrub(event.contexts);
+  const seen = new WeakSet<object>();
+  scrub(event.extra, 6, seen);
+  scrub(event.contexts, 6, seen);
   return event;
 }
 

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -80,6 +80,11 @@ export const EsocialComplianceAnalytics: React.FC = () => {
   const [period, setPeriod] = useState<EsocialCompliancePeriod>('6m');
   const [eventFilter, setEventFilter] = useState<EsocialEventFilter>('ALL');
   const [chartMode, setChartMode] = useState<ChartVisualizationMode>('area');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const dataset = useMemo(() => getEsocialComplianceDataset(period), [period]);
   const summary = useMemo(
@@ -357,172 +362,180 @@ export const EsocialComplianceAnalytics: React.FC = () => {
           </div>
 
           <div
-            className="w-full h-[320px] sm:h-[360px] 2xl:h-[380px]"
+            className="w-full min-h-[340px] h-[340px] sm:h-[370px] 2xl:h-[400px] relative"
             data-testid="recharts-primary-canvas"
           >
-            <ResponsiveContainer width="100%" height="100%">
-              {chartMode === 'area' ? (
-                <AreaChart
-                  data={dataset}
-                  margin={{ top: 12, right: 16, left: -12, bottom: 4 }}
-                >
-                  <defs>
-                    <linearGradient id="sageComplianceGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2E665A" stopOpacity={0.32} />
-                      <stop offset="95%" stopColor="#2E665A" stopOpacity={0.01} />
-                    </linearGradient>
-                    <linearGradient id="fjordSlaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4A728A" stopOpacity={0.24} />
-                      <stop offset="95%" stopColor="#4A728A" stopOpacity={0.01} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(120, 125, 132, 0.14)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                    axisLine={{ stroke: 'rgba(120, 125, 132, 0.2)' }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    domain={[92, 100]}
-                    tickFormatter={(v) => `${v}%`}
-                    tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip content={<FrostedChartTooltip />} />
-                  <Area
-                    type="monotone"
-                    dataKey="conformidadePct"
-                    name="Conformidade (%)"
-                    stroke="#2E665A"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#sageComplianceGrad)"
-                    activeDot={{ r: 5, stroke: '#2E665A', strokeWidth: 2, fill: '#FAF9F6' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="slaTempestividadePct"
-                    name="No prazo (%)"
-                    stroke="#4A728A"
-                    strokeWidth={1.75}
-                    fillOpacity={1}
-                    fill="url(#fjordSlaGrad)"
-                    activeDot={{ r: 4, stroke: '#4A728A', strokeWidth: 2, fill: '#FAF9F6' }}
-                  />
-                </AreaChart>
-              ) : chartMode === 'bars' ? (
-                <BarChart
-                  data={dataset}
-                  margin={{ top: 12, right: 16, left: -12, bottom: 4 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(120, 125, 132, 0.14)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                    axisLine={{ stroke: 'rgba(120, 125, 132, 0.2)' }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip content={<FrostedChartTooltip />} />
-                  {(eventFilter === 'ALL' || eventFilter === 'S-2240') && (
+            {!isMounted ? (
+              <div className="w-full h-full flex items-center justify-center rounded-xl bg-black/5 dark:bg-white/5 animate-pulse text-xs text-[var(--text-muted)] font-mono">
+                Carregando indicadores de conformidade...
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
+                {chartMode === 'area' ? (
+                  <AreaChart
+                    data={dataset}
+                    margin={{ top: 16, right: 20, left: -10, bottom: 6 }}
+                  >
+                    <defs>
+                      <linearGradient id="sageComplianceGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#2E665A" stopOpacity={0.55} />
+                        <stop offset="95%" stopColor="#2E665A" stopOpacity={0.05} />
+                      </linearGradient>
+                      <linearGradient id="fjordSlaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4A728A" stopOpacity={0.45} />
+                        <stop offset="95%" stopColor="#4A728A" stopOpacity={0.04} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="rgba(120, 125, 132, 0.22)"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                      axisLine={{ stroke: 'rgba(120, 125, 132, 0.3)' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      domain={[97, 100]}
+                      tickFormatter={(v) => `${v}%`}
+                      tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip content={<FrostedChartTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey="conformidadePct"
+                      name="Conformidade (%)"
+                      stroke="#2E665A"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#sageComplianceGrad)"
+                      dot={{ r: 4, stroke: '#2E665A', strokeWidth: 1.5, fill: '#FAF9F6' }}
+                      activeDot={{ r: 6, stroke: '#2E665A', strokeWidth: 2.5, fill: '#FAF9F6' }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="slaTempestividadePct"
+                      name="No prazo (%)"
+                      stroke="#4A728A"
+                      strokeWidth={2.2}
+                      fillOpacity={1}
+                      fill="url(#fjordSlaGrad)"
+                      dot={{ r: 3.5, stroke: '#4A728A', strokeWidth: 1.5, fill: '#FAF9F6' }}
+                      activeDot={{ r: 5, stroke: '#4A728A', strokeWidth: 2, fill: '#FAF9F6' }}
+                    />
+                  </AreaChart>
+                ) : chartMode === 'bars' ? (
+                  <BarChart
+                    data={dataset}
+                    margin={{ top: 16, right: 20, left: -10, bottom: 6 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="rgba(120, 125, 132, 0.22)"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                      axisLine={{ stroke: 'rgba(120, 125, 132, 0.3)' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip content={<FrostedChartTooltip />} />
+                    {(eventFilter === 'ALL' || eventFilter === 'S-2240') && (
+                      <Bar
+                        dataKey="s2240Risco"
+                        name="S-2240 (Condições Ambientais)"
+                        fill="#2E665A"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    )}
+                    {(eventFilter === 'ALL' || eventFilter === 'S-2220') && (
+                      <Bar
+                        dataKey="s2220Aso"
+                        name="S-2220 (Monitoramento ASO)"
+                        fill="#4A728A"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    )}
+                    {(eventFilter === 'ALL' || eventFilter === 'S-2221') && (
+                      <Bar
+                        dataKey="s2221Tox"
+                        name="S-2221 (Exame Toxicológico)"
+                        fill="#6E8A9C"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    )}
+                    {(eventFilter === 'ALL' || eventFilter === 'S-2210') && (
+                      <Bar
+                        dataKey="s2210Cat"
+                        name="S-2210 (CAT)"
+                        fill="#94A3B8"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    )}
+                  </BarChart>
+                ) : (
+                  <ComposedChart
+                    data={dataset}
+                    margin={{ top: 16, right: 20, left: -10, bottom: 6 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="rgba(120, 125, 132, 0.22)"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                      axisLine={{ stroke: 'rgba(120, 125, 132, 0.3)' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      domain={[94, 100]}
+                      tickFormatter={(v) => `${v}%`}
+                      tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip content={<FrostedChartTooltip />} />
                     <Bar
-                      dataKey="s2240Risco"
-                      name="S-2240 (Condições Ambientais)"
+                      yAxisId="left"
+                      dataKey="rejeicoesPrevenidas"
+                      name="Inconsistências corrigidas"
                       fill="#2E665A"
-                      radius={[4, 4, 0, 0]}
+                      radius={[5, 5, 0, 0]}
+                      barSize={24}
                     />
-                  )}
-                  {(eventFilter === 'ALL' || eventFilter === 'S-2220') && (
-                    <Bar
-                      dataKey="s2220Aso"
-                      name="S-2220 (Monitoramento ASO)"
-                      fill="#4A728A"
-                      radius={[4, 4, 0, 0]}
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="conformidadePct"
+                      name="Conformidade (%)"
+                      stroke="#4A728A"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: '#4A728A' }}
                     />
-                  )}
-                  {(eventFilter === 'ALL' || eventFilter === 'S-2221') && (
-                    <Bar
-                      dataKey="s2221Tox"
-                      name="S-2221 (Exame Toxicológico)"
-                      fill="#6E8A9C"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  )}
-                  {(eventFilter === 'ALL' || eventFilter === 'S-2210') && (
-                    <Bar
-                      dataKey="s2210Cat"
-                      name="S-2210 (CAT)"
-                      fill="#94A3B8"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  )}
-                </BarChart>
-              ) : (
-                <ComposedChart
-                  data={dataset}
-                  margin={{ top: 12, right: 16, left: -12, bottom: 4 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(120, 125, 132, 0.14)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                    axisLine={{ stroke: 'rgba(120, 125, 132, 0.2)' }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    yAxisId="left"
-                    tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    domain={[94, 100]}
-                    tickFormatter={(v) => `${v}%`}
-                    tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip content={<FrostedChartTooltip />} />
-                  <Bar
-                    yAxisId="left"
-                    dataKey="rejeicoesPrevenidas"
-                    name="Inconsistências corrigidas"
-                    fill="#2E665A"
-                    radius={[5, 5, 0, 0]}
-                    barSize={24}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="conformidadePct"
-                    name="Conformidade (%)"
-                    stroke="#4A728A"
-                    strokeWidth={2}
-                    dot={{ r: 3.5, fill: '#4A728A' }}
-                  />
-                </ComposedChart>
-              )}
-            </ResponsiveContainer>
+                  </ComposedChart>
+                )}
+              </ResponsiveContainer>
+            )}
           </div>
 
           <div className="pt-3 border-t border-[var(--border-hairline)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
@@ -546,36 +559,40 @@ export const EsocialComplianceAnalytics: React.FC = () => {
           </div>
 
           {/* Horizontal Recharts Bar Comparison */}
-          <div className="w-full h-[135px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={[...ESOCIAL_EVENT_BREAKDOWNS]}
-                layout="vertical"
-                margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
-              >
-                <XAxis type="number" domain={[95, 100]} hide />
-                <YAxis
-                  type="category"
-                  dataKey="code"
-                  width={54}
-                  tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip content={<FrostedChartTooltip />} />
-                <Bar
-                  dataKey="compliancePct"
-                  name="Conformidade (%)"
-                  radius={[0, 6, 6, 0]}
-                  barSize={14}
+          <div className="w-full min-h-[135px] h-[135px]">
+            {!isMounted ? (
+              <div className="w-full h-full rounded-xl bg-black/5 dark:bg-white/5 animate-pulse" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={135}>
+                <BarChart
+                  data={[...ESOCIAL_EVENT_BREAKDOWNS]}
+                  layout="vertical"
+                  margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
                 >
-                  {ESOCIAL_EVENT_BREAKDOWNS.map((entry, idx) => {
-                    const tones = ['#2E665A', '#4A728A', '#6E8A9C', '#94A3B8'];
-                    return <Cell key={entry.code} fill={tones[idx % tones.length]} />;
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                  <XAxis type="number" domain={[95, 100]} hide />
+                  <YAxis
+                    type="category"
+                    dataKey="code"
+                    width={54}
+                    tick={{ fill: '#767B82', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<FrostedChartTooltip />} />
+                  <Bar
+                    dataKey="compliancePct"
+                    name="Conformidade (%)"
+                    radius={[0, 6, 6, 0]}
+                    barSize={14}
+                  >
+                    {ESOCIAL_EVENT_BREAKDOWNS.map((entry, idx) => {
+                      const tones = ['#2E665A', '#4A728A', '#6E8A9C', '#94A3B8'];
+                      return <Cell key={entry.code} fill={tones[idx % tones.length]} />;
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           {/* Interactive Frosted Event Breakdown Cards */}

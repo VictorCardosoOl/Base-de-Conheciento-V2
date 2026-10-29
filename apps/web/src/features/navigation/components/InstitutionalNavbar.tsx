@@ -84,71 +84,53 @@ export function InstitutionalNavbar({
       <nav className="hidden md:flex items-center gap-1 text-sm font-medium text-text-muted">
         <Link
           href="/#visao-geral"
-          className="px-3.5 py-1.5 rounded-full hover:text-text-main hover:bg-border/30 transition-colors"
+          className="px-3.5 py-1.5 rounded-lg hover:text-text-main hover:bg-border/30 transition-colors"
         >
           Visão Geral
         </Link>
         <Link
           href="/#demonstracao"
-          className="px-3.5 py-1.5 rounded-full hover:text-text-main hover:bg-border/30 transition-colors"
+          className="px-3.5 py-1.5 rounded-lg hover:text-text-main hover:bg-border/30 transition-colors"
         >
           Demonstração
         </Link>
         <Link
           href="/#recursos"
-          className="px-3.5 py-1.5 rounded-full hover:text-text-main hover:bg-border/30 transition-colors"
+          className="px-3.5 py-1.5 rounded-lg hover:text-text-main hover:bg-border/30 transition-colors"
         >
           Recursos
         </Link>
         <Link
           href="/#planos"
-          className="px-3.5 py-1.5 rounded-full hover:text-text-main hover:bg-border/30 transition-colors"
+          className="px-3.5 py-1.5 rounded-lg hover:text-text-main hover:bg-border/30 transition-colors"
         >
           Planos
         </Link>
         <Link
           href="/sobre"
-          className="px-3.5 py-1.5 rounded-full hover:text-text-main hover:bg-border/30 transition-colors"
+          className="px-3.5 py-1.5 rounded-lg hover:text-text-main hover:bg-border/30 transition-colors"
         >
           Sobre
         </Link>
       </nav>
 
-      {/* Ações Direitas: Tema + Entrar / Cadastro */}
+      {/* Ações Direitas: Somente Acessar Acervo ou Entrar (sem tema e sem criar conta) */}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className="nav-icon-button"
-          aria-label={isDarkMode ? 'Ativar modo claro' : 'Ativar modo escuro'}
-          onClick={onToggleTheme}
-        >
-          {isDarkMode ? <Sun size={18} strokeWidth={1.6} /> : <Moon size={18} strokeWidth={1.6} />}
-        </button>
-
         {isAuthenticated ? (
           <Link
             href="/artigos"
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-text-main text-bg-main hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-text-main text-bg-main hover:opacity-90 transition-opacity"
           >
             <span>Acessar Acervo</span>
             <ArrowRight size={13} />
           </Link>
         ) : (
-          <div className="flex items-center gap-1 sm:gap-2">
-            <Link
-              href="/login?next=/artigos"
-              className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium text-text-muted hover:text-text-main transition-colors"
-            >
-              Entrar
-            </Link>
-            <Link
-              href="/cadastro?next=/artigos"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-text-main text-bg-main hover:opacity-90 transition-opacity"
-            >
-              <span>Experimentar</span>
-              <ArrowRight size={13} className="hidden sm:inline" />
-            </Link>
-          </div>
+          <Link
+            href="/login?next=/artigos"
+            className="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-text-muted hover:text-text-main border border-border/40 hover:border-text-main transition-colors"
+          >
+            Entrar
+          </Link>
         )}
       </div>
     </header>

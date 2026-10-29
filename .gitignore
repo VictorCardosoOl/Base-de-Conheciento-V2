@@ -26,6 +26,7 @@ pnpm-debug.log*
 
 # Next.js & Turborepo
 .next/
+.next-dev/
 out/
 build/
 dist/

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { sanitizeNextPath } from '@/features/auth/redirect';
+import { sanitizeInput } from '@/features/auth/security';
 import { RegisterForm } from './RegisterForm';
 
 export const metadata: Metadata = {
@@ -9,8 +10,19 @@ export const metadata: Metadata = {
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-// Cadastro público: a conta nasce como leitor. O `next` é validado no servidor.
+function firstParam(val: string | string[] | undefined): string {
+  return Array.isArray(val) ? val[0] ?? '' : val ?? '';
+}
+
+// Cadastro público: a conta nasce como leitor. O `next` e os parâmetros de pré-preenchimento são sanitizados no servidor.
 export default async function RegisterPage({ searchParams }: { searchParams: SearchParams }) {
-  const { next } = await searchParams;
-  return <RegisterForm next={sanitizeNextPath(Array.isArray(next) ? next[0] : next, '/conta')} />;
+  const params = await searchParams;
+  const nextPath = sanitizeNextPath(firstParam(params.next), '/conta');
+  const initialPrefill = {
+    email: sanitizeInput(firstParam(params.email), 160),
+    displayName: sanitizeInput(firstParam(params.name), 120),
+    organization: sanitizeInput(firstParam(params.org), 140),
+  };
+
+  return <RegisterForm next={nextPath} initialPrefill={initialPrefill} />;
 }

@@ -60,9 +60,9 @@ export function Dialog({
       }}
     >
       {open && (
-        <div className="p-6 sm:p-7">
-          <div className="flex items-start justify-between gap-4">
-            <h2 id={titleId} className="text-xl font-serif text-text-main leading-snug">
+        <div className="p-6 sm:p-7 bg-[var(--bg-island)] text-[var(--text-main)]">
+          <div className="flex items-start justify-between gap-4 pb-4 border-b border-[var(--border-hairline)]">
+            <h2 id={titleId} className="text-xl font-serif text-text-main leading-snug font-medium">
               {title}
             </h2>
             <Button variant="ghost" size="sm" icon aria-label="Fechar" onClick={onClose} className="-mr-2 -mt-1">
@@ -70,12 +70,12 @@ export function Dialog({
             </Button>
           </div>
           {description && (
-            <p id={descId} className="mt-2 text-sm text-text-muted leading-relaxed">
+            <p id={descId} className="mt-3 text-sm text-text-muted leading-relaxed">
               {description}
             </p>
           )}
           {children && <div className="mt-5">{children}</div>}
-          {footer && <div className="mt-6 flex flex-wrap justify-end gap-2">{footer}</div>}
+          {footer && <div className="mt-6 pt-4 border-t border-[var(--border-hairline)] flex flex-wrap justify-end gap-2">{footer}</div>}
         </div>
       )}
     </dialog>

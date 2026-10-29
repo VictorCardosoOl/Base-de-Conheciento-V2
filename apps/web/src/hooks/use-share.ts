@@ -1,7 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function useShare() {
   const [shareFeedback, setShareFeedback] = useState(false);
+  const [manualShareUrl, setManualShareUrl] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   const shareContent = async (title: string, text: string, url: string) => {
     const shareData = { title, text, url };
@@ -10,23 +20,25 @@ export function useShare() {
       try {
         await navigator.share(shareData);
       } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
+        if ((err as Error).name !== 'AbortError' && process.env.NODE_ENV !== 'production') {
           console.warn('Erro ao compartilhar:', err);
         }
       }
     } else {
-      // Fallback: Copiar URL para o clipboard
       try {
         await navigator.clipboard.writeText(url);
+        setManualShareUrl(null);
         setShareFeedback(true);
-        setTimeout(() => setShareFeedback(false), 2000);
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => setShareFeedback(false), 2000);
       } catch (err) {
-        console.warn('Clipboard indisponível:', err);
-        // Último recurso: permite copiar manualmente em vez de afirmar um sucesso falso
-        window.prompt('Não foi possível copiar automaticamente. Copie o link abaixo:', url);
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('Clipboard indisponível:', err);
+        }
+        setManualShareUrl(url);
       }
     }
   };
 
-  return { shareContent, shareFeedback };
+  return { shareContent, shareFeedback, manualShareUrl, clearManualShareUrl: () => setManualShareUrl(null) };
 }

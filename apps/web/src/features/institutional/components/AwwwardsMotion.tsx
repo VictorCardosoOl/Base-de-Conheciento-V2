@@ -5,7 +5,6 @@
 
 import React, { useEffect, useRef, useMemo } from 'react';
 import gsap from 'gsap';
-import { motion, Variants } from 'motion/react';
 import { calculateMagneticPull, tokenizeSplitText } from '../utils/sstCalculations';
 
 export const EASE_AWWWARDS: [number, number, number, number] = [0.16, 1, 0.3, 1];
@@ -41,41 +40,9 @@ export const SplitTextReveal: React.FC<SplitTextRevealProps> = ({
 
   const fullAccessibleText = highlightText ? `${text} ${highlightText}` : text;
 
-  const containerVars: Variants = {
-    hidden: {},
-    visible: {
-      transition: {
-        staggerChildren: charStagger,
-        delayChildren: delay,
-      },
-    },
-  };
-
-  const charVars: Variants = {
-    hidden: {
-      y: '55%',
-      opacity: 0,
-    },
-    visible: {
-      y: '0%',
-      opacity: 1,
-      transition: {
-        duration: 0.62,
-        ease: EASE_AWWWARDS,
-      },
-    },
-  };
-
   return (
     <Tag aria-label={fullAccessibleText} className={className}>
-      <motion.span
-        aria-hidden="true"
-        variants={containerVars}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.05, margin: '0px 0px -40px 0px' }}
-        className="inline"
-      >
+      <span aria-hidden="true" className="inline">
         {wordTokens.map((wordObj, wIdx) => (
           <span
             key={`word-${wIdx}`}
@@ -91,18 +58,18 @@ export const SplitTextReveal: React.FC<SplitTextRevealProps> = ({
                 key={`char-${charObj.globalIndex}`}
                 className="inline-block overflow-visible align-baseline"
               >
-                <motion.span
-                  variants={charVars}
+                <span
                   data-split-char={charObj.char}
+                  data-stagger-delay={(delay + charObj.globalIndex * charStagger).toFixed(3)}
                   className="inline-block"
                 >
                   {charObj.char}
-                </motion.span>
+                </span>
               </span>
             ))}
           </span>
         ))}
-      </motion.span>
+      </span>
     </Tag>
   );
 };

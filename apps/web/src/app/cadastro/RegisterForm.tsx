@@ -1,8 +1,9 @@
 "use client";
+
 import React from 'react';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import Link from 'next/link';
-import { UserPlus, Eye, EyeOff, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, ShieldCheck, ArrowRight, Clock } from 'lucide-react';
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -11,9 +12,15 @@ import { IdentityFields } from '@/features/auth/components/IdentityFields';
 import { ProfileFields } from '@/features/auth/components/ProfileFields';
 import { SocialLoginButtons } from '@/features/auth/components/SocialLoginButtons';
 import { TermsConsent } from '@/features/auth/components/TermsConsent';
-import { useRegisterForm } from '@/features/auth/use-register-form';
+import { useRegisterForm, type RegisterInitialPrefill } from '@/features/auth/use-register-form';
 
-export function RegisterForm({ next }: { next: string }) {
+export function RegisterForm({
+  next,
+  initialPrefill,
+}: {
+  next: string;
+  initialPrefill?: RegisterInitialPrefill;
+}) {
   const {
     email,
     setEmail,
@@ -58,30 +65,74 @@ export function RegisterForm({ next }: { next: string }) {
     honeypot,
     setHoneypot,
     handleSubmit,
-  } = useRegisterForm(next);
+  } = useRegisterForm(next, initialPrefill);
 
-  const inputClass = 'ui-input';
-  const labelClass = 'text-xs font-bold uppercase tracking-wider text-text-muted';
-  const primaryButton = 'ui-btn ui-btn--primary';
+  const inputClass =
+    'w-full h-11 px-4 rounded-lg bg-[#ECE9E2] dark:bg-white/[0.06] border border-[var(--border-hairline)] focus:bg-[#E5E1D8] dark:focus:bg-white/[0.09] focus:ring-1 focus:ring-[var(--accent-editorial)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/70 text-sm transition-all outline-none';
+  const labelClass =
+    'block text-xs font-medium text-[var(--text-secondary)] pl-1';
   const loginHref = `/login?${new URLSearchParams({ next })}`;
 
   const alert = error && (
-    <div role="alert" data-tone="danger" className="ui-alert justify-center">
+    <div
+      role="alert"
+      data-tone="danger"
+      className="p-3 rounded-lg border border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300 text-xs font-medium text-center"
+    >
       {error}
     </div>
   );
 
   return (
     <AuthSplitLayout>
-      <div className="w-full">
-        <div className="flex flex-col items-center mb-6 text-center">
-          <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3 text-[color:var(--mesh-1)] bg-[color:var(--tone-info-bg)]">
-            <UserPlus className="text-text-main" size={24} aria-hidden="true" />
+      <div className="w-full space-y-5">
+        {/* Cabeçalho Minimalista Sem Bordas */}
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-2.5">
+              <span
+                aria-hidden="true"
+                className="w-7 h-7 rounded-md bg-[#B27E29]/15 flex items-center justify-center text-[#B27E29] text-xs font-serif"
+              >
+                ✦
+              </span>
+              <div className="leading-tight">
+                <span className="block text-xs font-semibold tracking-tight text-[var(--text-primary)]">
+                  Base de Conhecimento™
+                </span>
+                <span className="block text-[11px] text-[var(--text-muted)]">
+                  Credenciamento Técnico SST &amp; eSocial
+                </span>
+              </div>
+            </div>
+
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-3 py-1.5 rounded-full bg-[#ECE9E2]/70 dark:bg-white/[0.05] hover:bg-[#ECE9E2] dark:hover:bg-white/[0.1]"
+            >
+              <span>← Início</span>
+            </Link>
           </div>
-          <h1 className="text-2xl font-serif text-text-main">Criar sua conta</h1>
-          <p className="text-text-muted mt-1 text-sm">
-            Preencha seus dados para acessar a Base de Conhecimento SST.
-          </p>
+
+          <div className="pt-1 space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-tabular uppercase tracking-[0.12em] text-[var(--accent-editorial)] inline-flex items-center gap-1">
+                <Clock size={12} aria-hidden="true" />
+                Cadastro em 30 Segundos
+              </span>
+              <span className="text-[var(--text-muted)] text-xs">·</span>
+              <span className="text-[11px] font-tabular text-[var(--text-muted)]">
+                Apenas o essencial
+              </span>
+            </div>
+
+            <h1 className="font-editorial text-3xl sm:text-[2.35rem] font-normal tracking-tight text-[var(--text-primary)] leading-[1.08]">
+              Criar sua conta corporativa.
+            </h1>
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
+              Acesse gratuitamente os cadernos normativos, checklists operacionais do eSocial e listas de leitura.
+            </p>
+          </div>
         </div>
 
         <SocialLoginButtons next={next} mode="signup" />
@@ -103,7 +154,7 @@ export function RegisterForm({ next }: { next: string }) {
           </div>
 
           {/* Email */}
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label htmlFor="register-email" className={labelClass}>
               Email corporativo ou pessoal
             </label>
@@ -120,19 +171,19 @@ export function RegisterForm({ next }: { next: string }) {
               onBlur={() => validateEmail(email)}
               required
               maxLength={254}
-              placeholder="ex: voce@empresa.com.br"
-              className={`${inputClass} ${emailError ? 'border-red-500 focus:border-red-500' : ''}`}
+              placeholder="voce@empresa.com.br"
+              className={`${inputClass} ${emailError ? 'ring-2 ring-red-500/50' : ''}`}
               aria-invalid={Boolean(emailError)}
             />
             {emailError && (
-              <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1 mt-1">
-                <AlertCircle size={14} aria-hidden="true" />
+              <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1 mt-1 pl-1">
+                <AlertCircle size={13} aria-hidden="true" />
                 {emailError}
               </p>
             )}
           </div>
 
-          {/* Identidade: Usuário e Nome Completo */}
+          {/* Identidade em Grade 2 Colunas: Nome e Usuário */}
           <IdentityFields
             idPrefix="register"
             username={username}
@@ -152,9 +203,9 @@ export function RegisterForm({ next }: { next: string }) {
             labelClass={labelClass}
           />
 
-          {/* Senha e Confirmação */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
+          {/* Senha e Confirmação em Grade 2 Colunas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="space-y-1.5">
               <label htmlFor="register-password" className={labelClass}>
                 Senha
               </label>
@@ -173,28 +224,30 @@ export function RegisterForm({ next }: { next: string }) {
                   required
                   minLength={PASSWORD_MIN_LENGTH}
                   maxLength={PASSWORD_MAX_LENGTH}
-                  className={`${inputClass} pr-10 ${passwordError ? 'border-red-500' : ''}`}
+                  placeholder={`Mín. ${PASSWORD_MIN_LENGTH} caracteres`}
+                  className={`${inputClass} pr-10 ${passwordError ? 'ring-2 ring-red-500/50' : ''}`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-text-main transition-colors focus:outline-none"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors focus:outline-none cursor-pointer"
                   aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
                 >
-                  {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                  {showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
                 </button>
               </div>
 
-              {/* Medidor visual de força da senha */}
               {password.length > 0 && (
-                <div className="pt-1.5 space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-text-muted flex items-center gap-1">
-                      <ShieldCheck size={12} aria-hidden="true" /> Força da senha:
+                <div className="pt-1 space-y-1 px-1">
+                  <div className="flex items-center justify-between text-[10px] font-tabular">
+                    <span className="text-[var(--text-muted)] flex items-center gap-1">
+                      <ShieldCheck size={11} aria-hidden="true" /> Segurança:
                     </span>
-                    <span className="font-semibold">{passwordStrength.label}</span>
+                    <span className="font-semibold text-[var(--text-primary)]">
+                      {passwordStrength.label}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-4 gap-1 h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="grid grid-cols-4 gap-1 h-1 w-full bg-[#ECE9E2] dark:bg-white/10 rounded-full overflow-hidden">
                     <div className={`h-full ${passwordStrength.score >= 1 ? passwordStrength.color : 'opacity-0'} transition-all`} />
                     <div className={`h-full ${passwordStrength.score >= 2 ? passwordStrength.color : 'opacity-0'} transition-all`} />
                     <div className={`h-full ${passwordStrength.score >= 3 ? passwordStrength.color : 'opacity-0'} transition-all`} />
@@ -204,15 +257,15 @@ export function RegisterForm({ next }: { next: string }) {
               )}
 
               {passwordError ? (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{passwordError}</p>
+                <p className="text-[11px] text-red-600 dark:text-red-400 pl-1">{passwordError}</p>
               ) : (
-                <p id="register-password-hint" className="text-xs text-text-muted">
+                <p id="register-password-hint" className="text-[11px] text-[var(--text-muted)] pl-1">
                   Mínimo {PASSWORD_MIN_LENGTH} caracteres com variedade.
                 </p>
               )}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label htmlFor="register-confirm" className={labelClass}>
                 Confirme a senha
               </label>
@@ -228,24 +281,25 @@ export function RegisterForm({ next }: { next: string }) {
                     if (confirmError) setConfirmError(null);
                   }}
                   required
-                  className={`${inputClass} pr-10 ${confirmError ? 'border-red-500' : ''}`}
+                  placeholder="Repita a senha"
+                  className={`${inputClass} pr-10 ${confirmError ? 'ring-2 ring-red-500/50' : ''}`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-text-main transition-colors focus:outline-none"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors focus:outline-none cursor-pointer"
                   aria-label={showConfirm ? 'Ocultar confirmação de senha' : 'Exibir confirmação de senha'}
                 >
-                  {showConfirm ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                  {showConfirm ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
                 </button>
               </div>
               {confirmError && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{confirmError}</p>
+                <p className="text-[11px] text-red-600 dark:text-red-400 pl-1">{confirmError}</p>
               )}
             </div>
           </div>
 
-          {/* Perfil Opcional */}
+          {/* Perfil Profissional Opcional em 2 Colunas */}
           <ProfileFields
             idPrefix="register"
             organization={organization}
@@ -257,24 +311,45 @@ export function RegisterForm({ next }: { next: string }) {
           />
 
           {/* Consentimento Termos */}
-          <TermsConsent
-            id="register-terms"
-            checked={acceptTerms}
-            onChange={(value) => {
-              setAcceptTerms(value);
-              if (value) setTermsError(null);
-            }}
-            error={termsError}
-            inputRef={termsRef}
-          />
+          <div className="pt-1">
+            <TermsConsent
+              id="register-terms"
+              checked={acceptTerms}
+              onChange={(value) => {
+                setAcceptTerms(value);
+                if (value) setTermsError(null);
+              }}
+              error={termsError}
+              inputRef={termsRef}
+            />
+          </div>
 
-          <button type="submit" disabled={isSaving} className={`w-full mt-4 py-3 ${primaryButton}`}>
-            {isSaving ? 'Criando conta…' : 'Criar conta'}
+          {/* Botão Primário Limpo */}
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="w-full h-11 px-6 rounded-lg font-semibold text-sm tracking-wide bg-spectral-gradient text-white hover:opacity-95 transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-2 shadow-sm"
+          >
+            {isSaving ? (
+              <>
+                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <span>Criando conta…</span>
+              </>
+            ) : (
+              <>
+                <span>Criar conta</span>
+                <ArrowRight size={16} aria-hidden="true" />
+              </>
+            )}
           </button>
 
-          <p className="text-sm text-text-muted text-center pt-2">
-            Já tem uma conta?{' '}
-            <Link href={loginHref} className="underline text-text-main font-semibold">
+          {/* Link para Login sem Linha Divisória */}
+          <p className="pt-2 text-center text-sm text-[var(--text-secondary)]">
+            Já possui uma conta?{' '}
+            <Link
+              href={loginHref}
+              className="font-semibold text-[var(--accent-editorial)] hover:underline underline-offset-4 transition-colors ml-1"
+            >
               Entrar
             </Link>
           </p>

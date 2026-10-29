@@ -8,7 +8,6 @@ import { EditorAccessRequest, type EditorRequestState } from './EditorAccessRequ
 import { EmailVerificationStatus } from './EmailVerificationStatus';
 import { ReadingQueueTile } from './ReadingQueueTile';
 import { MyCorrections } from './MyCorrections';
-import { GlassPreferenceControl } from '@/features/shell/components/GlassPreferenceControl';
 import { RingGauge } from '@/components/ui/glass/GlassMetrics';
 
 // Sessão e configuração de autenticação só em tempo de requisição (nunca no build).
@@ -37,7 +36,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
           : { kind: 'none' };
   }
   const linkClass =
-    'group inline-flex items-center justify-between gap-2 rounded-2xl px-4 py-3 text-sm font-medium text-text-main glass-flat glass-interactive glass-focus';
+    'group inline-flex items-center justify-between gap-2 rounded-md px-4 py-2.5 text-sm font-medium text-text-main bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] border border-[var(--border-hairline)] hover:border-[var(--border)] transition-colors';
 
   // Proteção da conta: o que dá para conferir daqui (email confirmado e senha definida).
   const checks = [
@@ -69,13 +68,13 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
         <section
           data-reveal
           aria-labelledby="account-identity"
-          className="glass-card glass-chroma md:col-span-4 p-6 sm:p-8 overflow-hidden"
+          className="rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] md:col-span-4 p-6 sm:p-8"
         >
           <h2 id="account-identity" className="sr-only">Identificação</h2>
           <div className="relative flex flex-col sm:flex-row sm:items-center gap-6">
             <span
               aria-hidden="true"
-              className="w-20 h-20 shrink-0 rounded-[1.75rem] flex items-center justify-center text-2xl font-semibold text-white bg-[linear-gradient(135deg,var(--mesh-1),var(--mesh-3))] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_18px_40px_-12px_var(--mesh-1)]"
+              className="w-16 h-16 shrink-0 rounded-lg flex items-center justify-center text-xl font-serif font-medium text-white bg-[var(--accent-editorial)] shadow-xs"
             >
               {initials || '?'}
             </span>
@@ -100,7 +99,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
               <div>
                 <dt className="ui-label">Papel</dt>
                 <dd>
-                  <span className="inline-block mt-0.5 px-3 py-1 rounded-full text-xs font-semibold text-text-main glass-flat !rounded-full">
+                  <span className="inline-block mt-0.5 px-2.5 py-0.5 rounded text-xs font-mono font-medium text-text-secondary bg-[var(--bg-elevated)] border border-[var(--border-hairline)]">
                     {roleLabel(user.role)}
                   </span>
                 </dd>
@@ -114,7 +113,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
           data-reveal
           style={{ ['--reveal-index' as string]: 1 }}
           aria-labelledby="account-protection"
-          className="glass-card md:col-span-2 p-6 flex flex-col items-center justify-center gap-4 text-center"
+          className="rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] md:col-span-2 p-6 flex flex-col items-center justify-center gap-4 text-center"
         >
           <h2 id="account-protection" className="ui-label">
             Proteção da conta
@@ -146,7 +145,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
           data-reveal
           style={{ ['--reveal-index' as string]: 3 }}
           aria-label="Ações da conta"
-          className="glass-card md:col-span-4 p-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5 content-start"
+          className="rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] md:col-span-4 p-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5 content-start"
         >
           {user.hasPassword === false ? (
             // Conta de login social sem senha: cria uma pelo link enviado ao email.
@@ -174,10 +173,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
             </Link>
           )}
           <Link href="/" className={linkClass}>
-            Voltar para a Base de Conhecimento
+            Voltar para a Base SST
           </Link>
           {/* Encerra também as sessões de outros navegadores (ex.: suspeita de acesso indevido). */}
-          <div className="sm:col-span-2 mt-2 flex flex-col sm:flex-row sm:items-center gap-2.5 border-t border-border pt-4">
+          <div className="sm:col-span-2 mt-2 flex flex-col sm:flex-row sm:items-center gap-2.5 border-t border-[var(--border-hairline)] pt-4">
             <p className="text-sm text-text-muted flex-1">
               Entrou em outro computador ou suspeita de acesso indevido? Encerre a sessão em todos os dispositivos.
               Limpar só parte dos dados do site no navegador não encerra a sessão: para sair, use Sair.
@@ -188,17 +187,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
           </div>
         </nav>
 
-        <div data-reveal className="md:col-span-4">
+        <div data-reveal className="md:col-span-6 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] p-6">
           <MyCorrections />
         </div>
 
-        <section data-reveal aria-labelledby="account-preferences" className="glass-card md:col-span-2 p-6">
-          <h2 id="account-preferences" className="text-base font-semibold text-text-main mb-4">Preferências</h2>
-          <GlassPreferenceControl className="[&_.grid]:!grid-cols-1" />
-        </section>
-
         {editorRequest && (
-          <div data-reveal className="glass-card md:col-span-6 p-6">
+          <div data-reveal className="rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] md:col-span-6 p-6">
             <EditorAccessRequest initial={editorRequest} />
           </div>
         )}

@@ -1,11 +1,22 @@
+'use client';
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ * 
+ * Smart Navbar / Auto-Hiding Navbar:
+ * - Oculta suavemente na rolagem para baixo (translateY(-100%), opacity-0)
+ * - Reaparece na rolagem para cima com elevação e sombra sutil
+ * - Integração limpa no topo (y=0)
+ * - Performance otimizada com threshold de delta (8px), requestAnimationFrame e listener passivo
+ * - Acessibilidade completa com suporte a menu mobile e navegação por teclado (Escape)
+ * - Restrição estrita: sem barra de busca, sem seletor de tema e sem botão 'Criar conta'
  */
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Sun, Moon, Menu, X, ArrowUpRight, Search } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Menu, X, ArrowUpRight } from 'lucide-react';
 import { SunburstEmblem } from './SunburstEmblem';
 import {
   calculateReadingProgress,
@@ -13,10 +24,10 @@ import {
 } from '../utils/sstCalculations';
 
 export interface InstitutionalNavbarProps {
-  activeSection: string;
-  themeMode: 'alabaster' | 'noir';
-  onToggleTheme: () => void;
-  onOpenLogin: () => void;
+  activeSection?: string;
+  themeMode?: 'alabaster' | 'noir';
+  onToggleTheme?: () => void;
+  onOpenLogin?: () => void;
   onOpenSearch?: () => void;
   isNotFoundView?: boolean;
   onNavigateHome?: (targetHash?: string) => void;
@@ -25,20 +36,23 @@ export interface InstitutionalNavbarProps {
 const NAV_LINKS = [
   { label: 'A Ideia', href: '#ideia', id: 'ideia' },
   { label: 'Cadernos', href: '#ensaio', id: 'ensaio' },
-  { label: 'Acervo SST', href: '#modulos', id: 'modulos' },
-  { label: 'Pesquisa', href: '#tecnologia', id: 'tecnologia' },
-  { label: 'DÃºvidas', href: '#faq', id: 'faq' },
+  { label: 'Módulos', href: '#modulos', id: 'modulos' },
+  { label: 'Plataforma', href: '#tecnologia', id: 'tecnologia' },
+  { label: 'Equipe', href: '#criadores', id: 'criadores' },
+  { label: 'Dúvidas', href: '#faq', id: 'faq' },
+  { label: 'Artigos', href: '/artigos', id: 'artigos' },
+  { label: 'Sobre', href: '/sobre', id: 'sobre-page' },
 ] as const;
 
 export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
-  activeSection,
-  themeMode,
-  onToggleTheme,
-  onOpenLogin: _onOpenLogin,
-  onOpenSearch,
+  activeSection = 'hero',
   isNotFoundView = false,
   onNavigateHome,
 }) => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const isHomeRoute = pathname === '/';
+
   const [atTop, setAtTop] = useState(true);
   const [isHidden, setIsHidden] = useState(false);
   const [isElevated, setIsElevated] = useState(false);
@@ -51,6 +65,7 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
   const isElevatedRef = useRef(false);
   const mobileMenuOpenRef = useRef(false);
 
+  // Trava o fechamento/ocultação da navbar quando o menu mobile está aberto
   useEffect(() => {
     mobileMenuOpenRef.current = mobileMenuOpen;
     if (mobileMenuOpen && isHiddenRef.current) {
@@ -59,7 +74,7 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
     }
   }, [mobileMenuOpen]);
 
-  // Close mobile menu on Escape key or viewport resize to desktop
+  // Teclado (Escape fecha o menu) e resize fecha drawer no desktop
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && mobileMenuOpenRef.current) {
@@ -67,7 +82,7 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
       }
     };
     const handleResize = () => {
-      if (window.innerWidth >= 1024 && mobileMenuOpenRef.current) {
+      if (window.innerWidth >= 1280 && mobileMenuOpenRef.current) {
         setMobileMenuOpen(false);
       }
     };
@@ -79,6 +94,7 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
     };
   }, []);
 
+  // Detector inteligente de rolagem com requestAnimationFrame e tolerância (threshold)
   useEffect(() => {
     const barEl = progressBarRef.current;
     let rafId = 0;
@@ -132,14 +148,30 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
     };
   }, []);
 
-  const isNoir = themeMode === 'noir';
   const effectiveHidden = isHidden && !mobileMenuOpen;
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     setMobileMenuOpen(false);
-    if (isNotFoundView && onNavigateHome) {
+    if (href.startsWith('#')) {
       e.preventDefault();
-      onNavigateHome(href);
+      if (isNotFoundView && onNavigateHome) {
+        onNavigateHome(href);
+        return;
+      }
+      if (!isHomeRoute) {
+        router.push(href === '#hero' ? '/' : `/${href}`);
+        return;
+      }
+      const id = href.slice(1);
+      const target = document.getElementById(id);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.history.pushState(null, '', href);
+      } else if (href === '#hero') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.history.pushState(null, '', '/');
+      }
+      return;
     }
   };
 
@@ -147,42 +179,49 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
     <header
       data-testid="smart-navbar"
       data-navbar-state={effectiveHidden ? 'hidden' : isElevated ? 'elevated' : 'top'}
-      className={`fixed top-0 left-0 right-0 z-50 will-change-transform transition-[transform,opacity,background-color,box-shadow,border-color,padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border-b focus-within:translate-y-0 ${
+      className={`fixed top-0 left-0 right-0 z-50 will-change-transform transition-[transform,opacity,background-color,box-shadow,border-color,padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border-b ${
         effectiveHidden
-          ? '-translate-y-full opacity-95 pointer-events-none'
+          ? '-translate-y-full opacity-0 pointer-events-none'
           : 'translate-y-0 opacity-100'
       } ${
         isElevated || mobileMenuOpen
-          ? 'bg-[var(--bg-glass-strong)] backdrop-blur-2xl border-[var(--border-hairline)] shadow-[0_14px_34px_-12px_rgba(0,0,0,0.22)] py-2.5 sm:py-3.5 2xl:py-4'
+          ? 'bg-[var(--bg-glass-strong)] backdrop-blur-2xl border-[var(--border-hairline)] shadow-[0_12px_32px_-12px_rgba(0,0,0,0.22)] py-2.5 sm:py-3.5 2xl:py-4'
           : atTop
-          ? 'bg-[var(--bg-glass)] backdrop-blur-md border-transparent shadow-none py-3.5 sm:py-4.5 2xl:py-5'
+          ? 'bg-[var(--bg-glass)] backdrop-blur-md border-[var(--border-hairline)] shadow-none py-3.5 sm:py-4 2xl:py-5'
           : 'bg-[var(--bg-glass-strong)] backdrop-blur-xl border-[var(--border-hairline)] py-3 sm:py-3.5'
       }`}
     >
       <nav
         role="navigation"
-        aria-label="NavegaÃ§Ã£o Institucional"
-        className="w-full max-w-[1920px] 3xl:max-w-[2160px] 4xl:max-w-[2400px] mx-auto px-4 sm:px-8 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-40 flex items-center justify-between gap-4 lg:gap-8"
+        aria-label="Navegação Institucional"
+        className="w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-4 sm:px-8 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44 flex items-center justify-between gap-4 lg:gap-6"
       >
-        {/* Zone 1: Single-line Editorial Brand Wordmark with Sunburst Emblem */}
+        {/* Marca Editorial com o Ícone Oficial do Círculo Dourado (SunburstEmblem) */}
         <a
-          href="#hero"
+          href={isHomeRoute ? '#hero' : '/'}
           onClick={(e) => handleLinkClick(e, '#hero')}
           data-testid="brand-wordmark"
           className="font-editorial text-lg sm:text-2xl 2xl:text-[26px] font-medium tracking-[-0.01em] text-[var(--text-primary)] whitespace-nowrap shrink-0 min-h-[44px] inline-flex items-center gap-2.5 transition-opacity hover:opacity-85"
         >
-          <SunburstEmblem size={24} strokeColor="var(--accent-ochre)" dotColor="var(--accent-ochre)" />
-          <span>Base de Conhecimento</span>
+          <SunburstEmblem size={26} strokeColor="#B27E29" dotColor="#B27E29" />
+          <span>
+            Base <span className="text-[#B27E29]">SST</span>
+          </span>
         </a>
 
-        {/* Zone 2: 5 Clean Single-Line Navigation Links */}
-        <div className="hidden lg:flex items-center gap-7 xl:gap-8 2xl:gap-10 text-[13px] 2xl:text-sm font-normal">
+        {/* Links Centrais de Navegação */}
+        <div className="hidden xl:flex items-center gap-5 2xl:gap-7 text-[13px] 2xl:text-sm font-normal">
           {NAV_LINKS.map((link) => {
-            const isActive = !isNotFoundView && activeSection === link.id;
-            return (
+            const isSectionLink = link.href.startsWith('#');
+            const isActive = isSectionLink
+              ? isHomeRoute && !isNotFoundView && activeSection === link.id
+              : pathname === link.href;
+            const resolvedHref = isSectionLink && !isHomeRoute ? `/${link.href}` : link.href;
+
+            return isSectionLink ? (
               <a
                 key={link.id}
-                href={link.href}
+                href={resolvedHref}
                 onClick={(e) => handleLinkClick(e, link.href)}
                 aria-current={isActive ? 'location' : undefined}
                 className={`relative min-h-[44px] inline-flex items-center py-1 transition-colors duration-200 whitespace-nowrap shrink-0 ${
@@ -196,56 +235,63 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
                   <span className="absolute bottom-1.5 left-0 right-0 h-[1px] bg-[var(--text-primary)]" />
                 )}
               </a>
+            ) : (
+              <Link
+                key={link.id}
+                href={link.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={`relative min-h-[44px] inline-flex items-center py-1 transition-colors duration-200 whitespace-nowrap shrink-0 ${
+                  isActive
+                    ? 'text-[var(--text-primary)] font-medium'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                {link.label}
+                {isActive && (
+                  <span className="absolute bottom-1.5 left-0 right-0 h-[1px] bg-[var(--text-primary)]" />
+                )}
+              </Link>
             );
           })}
         </div>
 
-        {/* Zone 3: Minimal Utility Icons + Primary Action (All >= 44x44px Touch Targets) */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {onOpenSearch && (
-            <button
-              type="button"
-              onClick={onOpenSearch}
-              aria-label="Pesquisar no Acervo (Ctrl+K)"
-              title="Pesquisar no Acervo (Ctrl+K)"
-              className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            aria-label={isNoir ? 'Ativar Modo Claro' : 'Ativar Modo Escuro'}
-            title={isNoir ? 'Ativar Modo Claro' : 'Ativar Modo Escuro'}
-            className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+        {/* Ações Restritas: Artigos + Entrar (Sem busca, sem troca de tema e sem criar conta) */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <Link
+            href="/artigos"
+            className="inline-flex items-center justify-center min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--accent-editorial)] text-white hover:opacity-90 shadow-sm transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer"
           >
-            {isNoir ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+            <span>Ver Artigos</span>
+          </Link>
 
           <Link
             href="/login"
-            className="inline-flex items-center justify-center min-h-[44px] px-4 py-2 rounded-xl text-xs font-medium text-[var(--text-primary)] glass-interactive-tile hover:opacity-90 transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer"
+            aria-current={pathname === '/login' ? 'page' : undefined}
+            className={`inline-flex items-center justify-center min-h-[40px] px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer ${
+              pathname === '/login'
+                ? 'bg-[var(--text-primary)] text-[var(--bg-canvas)] font-semibold'
+                : 'text-[var(--text-primary)] glass-interactive-tile hover:opacity-90'
+            }`}
           >
             <span>Entrar</span>
           </Link>
 
+          {/* Botão de Menu Hambúrguer Mobile com Acessibilidade ARIA */}
           <button
             type="button"
             data-testid="mobile-menu-toggle"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="lg:hidden flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl glass-interactive-tile cursor-pointer"
-            aria-label={mobileMenuOpen ? 'Fechar menu de navegaÃ§Ã£o' : 'Abrir menu de navegaÃ§Ã£o'}
+            className="xl:hidden flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg glass-interactive-tile cursor-pointer"
+            aria-label={mobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
             aria-expanded={mobileMenuOpen}
             aria-controls="smart-navbar-mobile-drawer"
           >
-            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </nav>
 
-      {/* Subtle Reading Progress Hairline */}
+      {/* Linha discreta de progresso de leitura */}
       <div
         aria-hidden="true"
         className="absolute bottom-0 left-0 right-0 h-[1px] bg-transparent overflow-hidden pointer-events-none"
@@ -260,49 +306,57 @@ export const InstitutionalNavbar: React.FC<InstitutionalNavbarProps> = ({
         />
       </div>
 
-      {/* Mobile Drawer (Locks Auto-Hide When Open & Ensures >= 44px Hitboxes) */}
+      {/* Menu Drawer Mobile */}
       {mobileMenuOpen && (
         <div
           id="smart-navbar-mobile-drawer"
           role="region"
-          aria-label="Menu de navegaÃ§Ã£o mÃ³vel"
-          className="fixed inset-x-3 sm:inset-x-6 top-[4.25rem] p-5 sm:p-6 rounded-2xl atelier-glass-pill lg:hidden flex flex-col gap-3 text-sm z-50 shadow-2xl border border-[var(--border-glass)]"
+          aria-label="Menu de navegação móvel"
+          className="fixed inset-x-3 sm:inset-x-6 top-[4.25rem] p-5 sm:p-6 rounded-xl atelier-glass xl:hidden flex flex-col gap-3 text-sm z-50 shadow-2xl border border-[var(--border-glass)]"
           style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
         >
           <div className="flex flex-col divide-y divide-[var(--border-hairline)]">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.id}
-                href={link.href}
-                onClick={(e) => handleLinkClick(e, link.href)}
-                className="flex items-center justify-between min-h-[48px] py-3 px-2 text-[var(--text-primary)] hover:text-[var(--accent-editorial)] transition-colors"
-              >
-                <span className="font-medium">{link.label}</span>
-                <ArrowUpRight className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
-              </a>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const isSectionLink = link.href.startsWith('#');
+              const resolvedHref = isSectionLink && !isHomeRoute ? `/${link.href}` : link.href;
+              return isSectionLink ? (
+                <a
+                  key={link.id}
+                  href={resolvedHref}
+                  onClick={(e) => handleLinkClick(e, link.href)}
+                  className="flex items-center justify-between min-h-[48px] py-3 px-2 text-[var(--text-primary)] hover:text-[var(--accent-editorial)] transition-colors"
+                >
+                  <span className="font-medium">{link.label}</span>
+                  <ArrowUpRight className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+                </a>
+              ) : (
+                <Link
+                  key={link.id}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between min-h-[48px] py-3 px-2 text-[var(--text-primary)] hover:text-[var(--accent-editorial)] transition-colors"
+                >
+                  <span className="font-medium">{link.label}</span>
+                  <ArrowUpRight className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+                </Link>
+              );
+            })}
           </div>
 
           <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
-            {onOpenSearch && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenSearch();
-                }}
-                className="w-full min-h-[48px] py-2.5 px-4 rounded-xl text-center text-xs font-medium glass-interactive-tile text-[var(--text-primary)] inline-flex items-center justify-center gap-2"
-              >
-                <Search className="w-3.5 h-3.5 text-[var(--accent-editorial)]" />
-                <span>Buscar no Acervo</span>
-              </button>
-            )}
+            <Link
+              href="/artigos"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full min-h-[48px] py-2.5 px-4 rounded-lg text-center text-xs font-semibold bg-[var(--accent-editorial)] text-white flex items-center justify-center cursor-pointer"
+            >
+              Catálogo de Artigos
+            </Link>
             <Link
               href="/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full min-h-[48px] py-2.5 px-4 rounded-xl text-center text-xs font-medium bg-spectral-gradient flex items-center justify-center text-white cursor-pointer"
+              className="w-full min-h-[48px] py-2.5 px-4 rounded-lg text-center text-xs font-medium glass-interactive-tile flex items-center justify-center text-[var(--text-primary)] cursor-pointer"
             >
-              Entrar na Plataforma
+              Entrar
             </Link>
           </div>
         </div>

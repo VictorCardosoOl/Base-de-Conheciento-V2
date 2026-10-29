@@ -3,7 +3,9 @@
 @import './ui.css';
 @import './institutional-theme.css';
 
-/* Cache bust Turbopack: monochrome v2 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Cache bust Turbopack: monochrome v3 */
 
 /* Classes encontradas pela detecção automática do Tailwind v4 (a partir da raiz do
    projeto, respeitando o .gitignore). Não há @source: os antigos apontavam para
@@ -31,45 +33,130 @@
 }
 
 @layer base {
-  :root {
-    --bg-main: #f8f8f8;
-    --bg-island: #ffffff;
-    --text-main: #000000;
-    --text-body: #111111;
-    --text-muted: #555555;
-    --accent: #000000;
-    --border: rgba(0, 0, 0, 0.12);
-    --selection: rgba(0, 0, 0, 0.1);
+  :root,
+  .theme-alabaster {
+    --font-serif: var(--font-playfair, 'Playfair Display', Georgia, serif);
+    --font-sans: var(--font-inter, 'Inter', system-ui, -apple-system, sans-serif);
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+    /* Alabaster Mode: Warm Archival Paper & Deep Charcoal Ink */
+    --bg-main: #F4F2ED;
+    --bg-island: #FFFFFF;
+    --bg-canvas: #F4F2ED;
+    --bg-elevated: #EAE7DF;
+    --bg-paper: #FAF9F6;
+    --bg-paper-warm: #EFECE5;
+    --bg-glass: #FAF9F6;
+    --bg-glass-strong: #FFFFFF;
+
+    --text-main: #16181A;
+    --text-body: #16181A;
+    --text-primary: #16181A;
+    --text-secondary: #3B4045;
+    --text-muted: #595E66;
+    --text-on-paper: #16181A;
+    --text-on-paper-muted: #3B4045;
+
+    --border: rgba(22, 24, 26, 0.12);
+    --border-hairline: rgba(22, 24, 26, 0.11);
+    --border-paper-hairline: rgba(22, 24, 26, 0.11);
+    --border-glass: rgba(22, 24, 26, 0.11);
+    --selection: rgba(35, 79, 70, 0.14);
+
+    --accent: #234F46;
+    --accent-editorial: #234F46;
+    --accent-sage: #234F46;
+    --accent-sage-light: #2E665A;
+    --accent-fjord: #36586D;
+    --accent-fjord-light: #4A728A;
+
+    --accent-ochre: #B27E29;
+    --accent-ochre-light: #946519;
+    --accent-ochre-muted: rgba(178, 126, 41, 0.12);
+    --accent-terracotta: #D85523;
+    --accent-terracotta-muted: rgba(216, 85, 35, 0.12);
+    --accent-lilac: #8E52A3;
+    --accent-lilac-muted: rgba(142, 82, 163, 0.12);
+
+    /* Solid Clean Architectural Surfaces (No AI Glassmorphism) */
+    --glass-surface: #FAF9F6;
+    --glass-surface-hover: #EFECE5;
+    --glass-inner-highlight: none;
+    --glass-shadow: 0 1px 2px rgba(22, 24, 26, 0.04);
+    --glass-shadow-hover: 0 2px 5px rgba(22, 24, 26, 0.06);
+    --glass-spotlight: none;
     color-scheme: light;
   }
 
   :root.dark,
   html.dark,
-  body.dark {
-    --bg-main: #000000;
-    --bg-island: #0a0a0a;
-    --text-main: #ffffff;
-    --text-body: #eeeeee;
-    --text-muted: #888888;
-    --accent: #ffffff;
-    --border: rgba(255, 255, 255, 0.14);
-    --selection: rgba(255, 255, 255, 0.2);
+  html[data-theme='dark'],
+  body.dark,
+  .dark {
+    --bg-main: #0B0D10;
+    --bg-island: #11151A;
+    --bg-canvas: #0B0D10;
+    --bg-elevated: #161B21;
+    --bg-paper: #11151A;
+    --bg-paper-warm: #161B21;
+    --bg-glass: #11151A;
+    --bg-glass-strong: #161B21;
+
+    --text-main: #F2F0EB;
+    --text-body: #E6E4DD;
+    --text-primary: #F2F0EB;
+    --text-secondary: #B4BCC6;
+    --text-muted: #848D99;
+    --text-on-paper: #F2F0EB;
+    --text-on-paper-muted: #B4BCC6;
+
+    --border: rgba(242, 240, 235, 0.14);
+    --border-hairline: rgba(242, 240, 235, 0.12);
+    --border-paper-hairline: rgba(242, 240, 235, 0.12);
+    --border-glass: rgba(242, 240, 235, 0.12);
+    --selection: rgba(138, 181, 168, 0.22);
+
+    --accent: #8AB5A8;
+    --accent-editorial: #68B2A0;
+    --accent-sage: #356B5F;
+    --accent-sage-light: #68A395;
+    --accent-fjord: #486E86;
+    --accent-fjord-light: #7B9EB5;
+
+    --accent-ochre: #D9A44E;
+    --accent-ochre-light: #E8BF74;
+    --accent-ochre-muted: rgba(217, 164, 78, 0.18);
+    --accent-terracotta: #F26A36;
+    --accent-terracotta-muted: rgba(242, 106, 54, 0.18);
+    --accent-lilac: #D8B4E2;
+    --accent-lilac-muted: rgba(216, 180, 226, 0.18);
+
+    --glass-surface: #11151A;
+    --glass-surface-hover: #161B21;
+    --glass-inner-highlight: none;
+    --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    --glass-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.55);
+    --glass-spotlight: none;
     color-scheme: dark;
   }
 
   html {
     scroll-behavior: smooth;
     font-size: clamp(14px, 0.8rem + 0.4vw, 18px);
-    /* Espaço ocupado pelo banner de cookies (0 quando ele não está visível):
-       o foco por teclado rola o elemento para acima do banner. */
     scroll-padding-bottom: var(--cookie-banner-h, 0px);
   }
 
   body {
-    /* Fundo base vem da malha (.liquid-backdrop, em glass.css); bg-main fica de reserva. */
-    @apply antialiased transition-colors duration-500 bg-bg-main text-text-body font-sans;
-    /* Permite rolar o fim da página para fora de baixo do banner de cookies. */
+    @apply antialiased bg-bg-main text-text-body font-sans;
     padding-bottom: var(--cookie-banner-h, 0px);
+  }
+
+  /* Tratamento de mídia uniforme para documentação técnica */
+  img[src*="/assets/aistudio/"],
+  .editorial-photo,
+  .editorial-media-frame img {
+    filter: saturate(0.85) contrast(0.96);
+    transition: filter 0.2s ease;
   }
 
   /* Scrollbar Hide */
@@ -582,4 +669,20 @@
 .below-fold {
   content-visibility: auto;
   contain-intrinsic-size: 1px 400px;
+}
+
+/* Fluid Cinema-Style Layout Utilities */
+@layer utilities {
+  .max-w-screen-3xl {
+    max-width: 1920px;
+  }
+  .max-w-screen-4xl {
+    max-width: 2560px;
+  }
+  .max-w-cinema {
+    max-width: 2200px;
+  }
+  .max-w-cinema-ultra {
+    max-width: 2560px;
+  }
 }

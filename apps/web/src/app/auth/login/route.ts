@@ -3,10 +3,16 @@ import {
   mockUsers,
   mockSessions,
   createMockAccessToken,
+  verifyMockPassword,
+  checkLoginRateLimit,
+  resetLoginRateLimit,
+  isMockAuthAllowed,
+  pruneMockSessions,
+  resolveCookieSameSite,
 } from '@/lib/mock-auth-store';
 
 export async function POST(request: NextRequest) {
-  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_MOCK_AUTH !== 'true') {
+  if (!isMockAuthAllowed()) {
     return NextResponse.json(
       { error: { code: 'FORBIDDEN', message: 'Mock auth desativado em ambiente de produção' } },
       { status: 403 }
@@ -14,6 +20,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const ip =
+      request.headers.get('x-real-ip') ||
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      '127.0.0.1';
+
     const { email, password } = await request.json();
     if (!email || !password || typeof password !== 'string') {
       return NextResponse.json(
@@ -23,30 +34,44 @@ export async function POST(request: NextRequest) {
     }
 
     const normEmail = String(email).trim().toLowerCase();
+    const ipRateKey = `ip:${ip}:${normEmail}`;
+    const acctRateKey = `acct:${normEmail}`;
+    const ipRateCheck = checkLoginRateLimit(ipRateKey);
+    const acctRateCheck = checkLoginRateLimit(acctRateKey, 15);
+    if (!ipRateCheck.allowed || !acctRateCheck.allowed) {
+      const retryAfterSec = Math.max(ipRateCheck.retryAfterSec, acctRateCheck.retryAfterSec);
+      return NextResponse.json(
+        {
+          error: {
+            code: 'RATE_LIMITED',
+            message: 'Muitas tentativas de login. Aguarde alguns instantes antes de tentar novamente.',
+          },
+        },
+        { status: 429, headers: { 'Retry-After': String(retryAfterSec) } }
+      );
+    }
+
     const user = mockUsers.get(normEmail);
-
-    if (!user) {
+    if (!user || !verifyMockPassword(password, user)) {
       return NextResponse.json(
         { error: { code: 'INVALID_CREDENTIALS', message: 'Credenciais inválidas' } },
         { status: 401 }
       );
     }
 
-    // Validação estrita de senha do usuário (com suporte a senha de desenvolvimento)
-    const expectedPassword = user.password || 'admin123456';
-    if (password !== expectedPassword) {
-      return NextResponse.json(
-        { error: { code: 'INVALID_CREDENTIALS', message: 'Credenciais inválidas' } },
-        { status: 401 }
-      );
-    }
+    resetLoginRateLimit(ipRateKey);
+    resetLoginRateLimit(acctRateKey);
 
+    pruneMockSessions();
     const sessionId = crypto.randomUUID();
     mockSessions.set(sessionId, { userId: user.id, createdAt: new Date() });
 
-    const accessToken = await createMockAccessToken(user, sessionId);
+    const accessToken = await createMockAccessToken(user, sessionId, request.nextUrl.origin);
     const cookieName = process.env.AUTH_ACCESS_COOKIE_NAME || 'kb_at';
-    const isSecure = request.url.startsWith('https://') || process.env.NODE_ENV === 'production';
+    const isSecure =
+      request.headers.get('x-forwarded-proto') === 'https' ||
+      request.url.startsWith('https://');
+    const sameSite = resolveCookieSameSite(isSecure);
 
     const response = NextResponse.json({
       ok: true,
@@ -65,7 +90,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set(cookieName, accessToken, {
       path: '/',
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite,
       secure: isSecure,
       maxAge: 3600,
     });
@@ -73,7 +98,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set('kb_rt', sessionId, {
       path: '/auth',
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite,
       secure: isSecure,
       maxAge: 7 * 86400,
     });

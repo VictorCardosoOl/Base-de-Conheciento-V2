@@ -2,7 +2,7 @@ import { useMemo, useDeferredValue } from 'react';
 import MiniSearch from 'minisearch';
 
 interface UseSearchOptions {
-  keys: string[];
+  keys: readonly string[];
   threshold?: number;
 }
 
@@ -15,10 +15,17 @@ export function useSearch<T extends object>(
   const deferredQuery = useDeferredValue(query);
   const trimmed = deferredQuery?.trim();
 
+  // Assinatura primitiva estável para evitar re-indexação O(N*M) quando `options.keys` é passado inline
+  const keysSignature = options.keys.join('\u0000');
+  const stableKeys = useMemo(
+    () => (keysSignature ? keysSignature.split('\u0000') : []),
+    [keysSignature]
+  );
+
   // Constrói e indexa os documentos no MiniSearch com memoização estável
   const miniSearch = useMemo(() => {
     const ms = new MiniSearch<T>({
-      fields: options.keys,
+      fields: stableKeys,
       storeFields: ['id'],
       idField: 'id',
       // Tokenização otimizada para português e pontuação
@@ -54,7 +61,7 @@ export function useSearch<T extends object>(
       engine: ms,
       idMap: new Map(indexedData.map((item) => [item.id, item])),
     };
-  }, [data, options.keys]);
+  }, [data, stableKeys]);
 
   const results = useMemo(() => {
     // Guard clause: termo vazio retorna lista completa imediatamente
@@ -82,7 +89,7 @@ export function useSearch<T extends object>(
       // Guard clause: se já foi encontrado pelo MiniSearch, pula
       if (itemId && hitIds.has(itemId)) return false;
 
-      return options.keys.some((key) => {
+      return stableKeys.some((key) => {
         const val = record[key];
         if (typeof val === 'string') {
           return val.toLowerCase().includes(lowerQuery);
@@ -95,7 +102,7 @@ export function useSearch<T extends object>(
     });
 
     return [...matchedItems, ...fallbackItems];
-  }, [miniSearch, trimmed, data, options.keys]);
+  }, [miniSearch, trimmed, data, stableKeys]);
 
   return results;
 }

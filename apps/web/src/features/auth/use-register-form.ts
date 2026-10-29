@@ -30,16 +30,22 @@ const LENGTH_MESSAGE = `A senha deve ter entre ${PASSWORD_MIN_LENGTH} e ${PASSWO
 const EMAIL_REGEX =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
-export function useRegisterForm(next: string) {
-  const [email, setEmail] = useState('');
+export interface RegisterInitialPrefill {
+  email?: string;
+  displayName?: string;
+  organization?: string;
+}
+
+export function useRegisterForm(next: string, initialPrefill?: RegisterInitialPrefill) {
+  const [email, setEmail] = useState(initialPrefill?.email ?? '');
   const [emailError, setEmailError] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [organization, setOrganization] = useState('');
+  const [displayName, setDisplayName] = useState(initialPrefill?.displayName ?? '');
+  const [organization, setOrganization] = useState(initialPrefill?.organization ?? '');
   const [professionalArea, setProfessionalArea] = useState<ProfessionalArea | ''>('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
@@ -86,8 +92,20 @@ export function useRegisterForm(next: string) {
     e.preventDefault();
     setError('');
 
-    // Honeypot check anti-bot
+    // Honeypot check anti-bot: encaminha silenciosamente ao servidor para registro/descarte
     if (honeypot) {
+      setIsSaving(true);
+      await register({
+        email: email.trim().toLowerCase() || 'bot@blocked.local',
+        password: password || 'bot-blocked-password',
+        username: normalizeUsername(username) || 'botuser',
+        displayName: sanitizeInput(displayName) || 'Bot',
+        honeypot,
+        acceptTerms: true,
+        termsVersion: TERMS_VERSION,
+        privacyVersion: PRIVACY_VERSION,
+      });
+      setIsSaving(false);
       return;
     }
 

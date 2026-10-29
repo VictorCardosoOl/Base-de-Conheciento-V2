@@ -84,7 +84,7 @@ export function AdminDashboard({ canManageUsers = false }: { canManageUsers?: bo
             </header>
 
             <section aria-label="Indicadores" className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-                <div className="glass-card col-span-2 lg:row-span-2 p-6 flex flex-col items-center justify-center gap-3 text-center">
+                <div className="col-span-2 lg:row-span-2 p-6 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] flex flex-col items-center justify-center gap-3 text-center">
                     <p className="ui-label">Saúde do acervo</p>
                     <RingGauge value={healthy} size={140} stroke={12} label="Artigos dentro da validade">
                         <span className="text-3xl font-semibold text-text-main tabular-nums">{healthy}%</span>
@@ -99,20 +99,20 @@ export function AdminDashboard({ canManageUsers = false }: { canManageUsers?: bo
                         key={kpi.label}
                         type="button"
                         onClick={() => setTab(kpi.tab)}
-                        className="glass-card glass-interactive p-5 flex flex-col justify-between gap-4 min-h-[8rem] text-left"
+                        className="group p-5 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] hover:border-[var(--border)] transition-colors flex flex-col justify-between gap-4 min-h-[8rem] text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-editorial)]"
                     >
-                        <span className="w-9 h-9 rounded-full glass-flat !rounded-full flex items-center justify-center text-[color:var(--mesh-1)]">
-                            <kpi.icon size={16} aria-hidden="true" />
+                        <span className="w-8 h-8 rounded-md bg-[var(--bg-elevated)] border border-[var(--border-hairline)] flex items-center justify-center text-text-main group-hover:border-[var(--border)] transition-colors">
+                            <kpi.icon size={15} aria-hidden="true" />
                         </span>
                         <span>
                             <span className="block text-3xl font-semibold tracking-tight text-text-main tabular-nums">
-                                {kpi.value ?? '—'}
+                                {kpi.value ?? '-'}
                             </span>
                             <span className="text-xs text-text-muted">{kpi.label}</span>
                         </span>
                     </button>
                 ))}
-                <div className="glass-card col-span-2 lg:col-span-4 p-6">
+                <div className="col-span-2 lg:col-span-4 p-6 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)]">
                     <p className="ui-label mb-4">Artigos por módulo</p>
                     <BarList items={byCategory} label="Artigos por módulo" />
                 </div>
@@ -149,7 +149,7 @@ export function AdminDashboard({ canManageUsers = false }: { canManageUsers?: bo
                     ) : (
                         <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {audit.map(({ item, validity }) => (
-                                <li key={item.id} className="glass-card p-5 space-y-2">
+                                <li key={item.id} className="p-5 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] space-y-2">
                                     <div className="flex items-start justify-between gap-3">
                                         <Link href={`/artigo/${item.id}`} className="ui-link font-semibold text-sm">
                                             {item.question}
@@ -178,7 +178,7 @@ export function AdminDashboard({ canManageUsers = false }: { canManageUsers?: bo
                         <span className="ui-label">Filtrar artigos</span>
                         <input className="ui-input" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Título, módulo ou identificador" />
                     </label>
-                    <div className="ui-table-wrap glass-card !rounded-3xl">
+                    <div className="ui-table-wrap rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)]">
                         <table className="ui-table">
                             <caption className="sr-only">Artigos publicados ({articles.length})</caption>
                             <thead>
@@ -197,8 +197,8 @@ export function AdminDashboard({ canManageUsers = false }: { canManageUsers?: bo
                                             <Link href={`/artigo/${item.id}`} className="ui-link">{item.question}</Link>
                                         </td>
                                         <td><span className="ui-badge">{item.category}</span></td>
-                                        <td className="text-text-muted whitespace-nowrap">{item.date || '—'}</td>
-                                        <td className="text-text-muted whitespace-nowrap">{item.lastReviewed || '—'}</td>
+                                        <td className="text-text-muted whitespace-nowrap">{item.date || '-'}</td>
+                                        <td className="text-text-muted whitespace-nowrap">{item.lastReviewed || '-'}</td>
                                         <td className="text-right">
                                             <ButtonLink href={`/admin/editor?artigo=${encodeURIComponent(item.id)}`} size="sm" variant="ghost" aria-label={`Preparar revisão de ${item.question}`}>
                                                 <FilePenLine size={14} aria-hidden="true" /> Revisar

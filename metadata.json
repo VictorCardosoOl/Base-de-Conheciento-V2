@@ -1,0 +1,8 @@
+{
+  "name": "Base SST",
+  "description": "Plataforma de Alta Performance para Saúde e Segurança do Trabalho e eSocial com catálogo normativo, calculadoras de conformidade, modo leitura e autenticação RBAC.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

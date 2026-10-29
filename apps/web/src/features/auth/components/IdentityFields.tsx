@@ -44,19 +44,18 @@ const STATUS_TEXT: Record<
   },
 };
 
-// Administradores podem usar nomes reservados (ex.: uma conta de suporte).
 const ADMIN_RESERVED = {
   text: 'Nome reservado no cadastro público; administradores podem usá-lo. A disponibilidade será conferida ao salvar.',
   tone: 'muted' as const,
 };
 
 const TONE_CLASS = {
-  muted: 'text-text-muted',
-  ok: 'text-emerald-700 dark:text-emerald-400',
-  error: 'text-red-700 dark:text-red-300',
+  muted: 'text-[var(--text-muted)]',
+  ok: 'text-emerald-700 dark:text-emerald-400 font-medium',
+  error: 'text-red-600 dark:text-red-400',
 };
 
-/** Usuário (único, com disponibilidade em tempo real) e nome de exibição. */
+/** Usuário (único, com disponibilidade em tempo real) e nome de exibição em grade 2 colunas. */
 export function IdentityFields({
   idPrefix,
   username,
@@ -79,8 +78,33 @@ export function IdentityFields({
   const usernameInvalid = status.tone === 'error';
 
   return (
-    <>
-      <div className="space-y-1">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+      <div className="space-y-1.5">
+        <label htmlFor={`${idPrefix}-display-name`} className={labelClass}>
+          Nome
+        </label>
+        <input
+          id={`${idPrefix}-display-name`}
+          type="text"
+          autoComplete={forSomeoneElse ? 'off' : 'name'}
+          value={displayName}
+          onChange={(e) => onDisplayNameChange(e.target.value)}
+          required
+          maxLength={DISPLAY_NAME_MAX_LENGTH}
+          placeholder="Seu nome completo"
+          aria-invalid={displayNameError ? true : undefined}
+          aria-describedby={`${idPrefix}-display-name-hint`}
+          className={inputClass}
+        />
+        <p
+          id={`${idPrefix}-display-name-hint`}
+          className={`text-[11px] leading-snug ${displayNameError ? TONE_CLASS.error : TONE_CLASS.muted}`}
+        >
+          {displayNameError ?? 'Nome de exibição no portal.'}
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
         <label htmlFor={`${idPrefix}-username`} className={labelClass}>
           Usuário
         </label>
@@ -95,6 +119,7 @@ export function IdentityFields({
           onChange={(e) => onUsernameChange(e.target.value)}
           required
           maxLength={USERNAME_MAX_LENGTH + 10}
+          placeholder="ex: nome.sobrenome"
           aria-invalid={usernameInvalid || undefined}
           aria-describedby={`${idPrefix}-username-status`}
           className={inputClass}
@@ -102,36 +127,12 @@ export function IdentityFields({
         <p
           id={`${idPrefix}-username-status`}
           aria-live="polite"
-          className={`text-xs ${TONE_CLASS[status.tone]}`}
+          className={`text-[11px] leading-snug ${TONE_CLASS[status.tone]}`}
           data-testid="username-status"
         >
           {status.text}
         </p>
       </div>
-      <div className="space-y-1">
-        <label htmlFor={`${idPrefix}-display-name`} className={labelClass}>
-          Nome
-        </label>
-        <input
-          id={`${idPrefix}-display-name`}
-          type="text"
-          autoComplete={forSomeoneElse ? 'off' : 'name'}
-          value={displayName}
-          onChange={(e) => onDisplayNameChange(e.target.value)}
-          required
-          maxLength={DISPLAY_NAME_MAX_LENGTH}
-          aria-invalid={displayNameError ? true : undefined}
-          aria-describedby={`${idPrefix}-display-name-hint`}
-          className={inputClass}
-        />
-        <p
-          id={`${idPrefix}-display-name-hint`}
-          className={`text-xs ${displayNameError ? TONE_CLASS.error : TONE_CLASS.muted}`}
-        >
-          {displayNameError ??
-            'Nome de exibição, mostrado no sistema. Não precisa ser único.'}
-        </p>
-      </div>
-    </>
+    </div>
   );
 }

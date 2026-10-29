@@ -26,6 +26,7 @@ dist-ssr
 
 # Next.js
 .next/
+.next-dev/
 out/
 build/
 .swc/

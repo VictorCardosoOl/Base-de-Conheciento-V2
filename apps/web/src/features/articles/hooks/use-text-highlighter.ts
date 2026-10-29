@@ -8,6 +8,8 @@ const VALID_HIGHLIGHT_COLORS: ReadonlyArray<HighlightItem['color']> = [
   'blue',
   'pink',
 ];
+const MAX_HIGHLIGHTS_PER_ARTICLE = 50;
+const MIN_HIGHLIGHT_LENGTH = 2;
 
 /**
  * Hook dedicado a aplicar marcações de texto mantendo total isolamento contra XSS
@@ -23,7 +25,11 @@ export function useTextHighlighter(
     if (!htmlContent) return '';
 
     const safeHtml = sanitizeArticleHtml(htmlContent);
-    if (!isMounted || highlights.length === 0) return safeHtml;
+    const safeHighlights = highlights
+      .filter((h) => typeof h?.text === 'string' && h.text.trim().length >= MIN_HIGHLIGHT_LENGTH)
+      .slice(0, MAX_HIGHLIGHTS_PER_ARTICLE);
+
+    if (!isMounted || safeHighlights.length === 0) return safeHtml;
 
     try {
       const parser = new DOMParser();
@@ -39,8 +45,7 @@ export function useTextHighlighter(
 
         let fragments: (string | { text: string; color: HighlightItem['color'] })[] = [text];
 
-        highlights.forEach((h) => {
-          if (!h.text) return;
+        safeHighlights.forEach((h) => {
           const escaped = h.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           const safeColor = VALID_HIGHLIGHT_COLORS.includes(h.color) ? h.color : 'yellow';
           const regex = new RegExp(`(${escaped})`, 'gi');

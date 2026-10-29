@@ -43,20 +43,25 @@ function useReserveSpace(
 
 export const CookieBanner: React.FC = () => {
   const { consent, acceptAll, rejectAll } = useConsent();
+  const [mounted, setMounted] = useState(false);
+
+  useLayoutEffect(() => {
+    setMounted(true);
+  }, []);
 
   const containerRef = useRef<HTMLElement>(null);
-  useReserveSpace(containerRef, consent === 'pending');
+  useReserveSpace(containerRef, mounted && consent === 'pending');
   const [isClosing, setIsClosing] = useState(false);
 
   useGSAP(() => {
-    if (consent === 'pending' && !isClosing && containerRef.current) {
+    if (mounted && consent === 'pending' && !isClosing && containerRef.current) {
       gsap.fromTo(
         containerRef.current,
         { opacity: 0, y: 16 },
         { opacity: 1, y: 0, duration: 0.38, ease: 'power4.out', overwrite: 'auto' }
       );
     }
-  }, [consent, isClosing]);
+  }, [mounted, consent, isClosing]);
 
   const handleAction = (action: () => void) => {
     setIsClosing(true);
@@ -76,8 +81,8 @@ export const CookieBanner: React.FC = () => {
     }
   };
 
-  // Não renderiza se o usuário já expressou consentimento e não está fechando
-  if (consent !== 'pending' && !isClosing) return null;
+  // Não renderiza no SSR ou se o usuário já expressou consentimento e não está fechando
+  if (!mounted || (consent !== 'pending' && !isClosing)) return null;
 
   return (
     <aside

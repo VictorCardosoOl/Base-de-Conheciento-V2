@@ -407,16 +407,16 @@ export const PREVENCE_FAQ_ITEMS: readonly SstFaqItem[] = [
     indexCode: '06',
     category: 'governanca',
     categoryLabel: 'Governança & Acesso',
-    normativeRef: 'ICP-Brasil A1/A3 · Curadoria 24h · Acesso Credenciado',
+    normativeRef: 'AuthService RBAC · Revisão de 12 Meses · Sugestões e Comentários',
     question:
-      'Como funciona a curadoria técnica, o sigilo documental e o credenciamento institucional na Base de Conhecimento?',
+      'Como funcionam os perfis de acesso (Leitor, Editor e Administrador), a revisão de conteúdo e as contribuições na plataforma?',
     editorialPullQuote:
-      'Uma Base de Conhecimento viva, revisada por pares em até 24 horas e desenhada sob o princípio do silêncio visual.',
+      'Uma Base de Conhecimento colaborativa, com ciclo de revisão de 12 meses, busca instantânea e moderação técnica.',
     answer:
-      'Idealizada por Guilherme e Victor, a Base de Conhecimento opera como um acervo privado de inteligência normativa. Organizações e profissionais credenciados têm acesso a árvores decisórias, modelos de pareceres, scripts de diagnóstico de mensageria e-CAC (erros SOAP/TLS e lotes XML) e atualizações contínuas de NRs e portarias do MTE, com ciclo de revisão técnica em até 24 horas.',
+      'Idealizada por Victor Cardoso e Guilherme Cruz, com consultoria técnica de Sabrina Fraguela e João Sanchez, a plataforma conta com catálogo público de leitura rápida e sistema completo de contas (AuthService). Usuários autenticados podem avaliar a utilidade dos artigos, enviar sugestões de correção diretamente nos procedimentos, participar de discussões moderadas e solicitar perfil de Editor para publicar e atualizar artigos no painel administrativo.',
     technicalNote:
-      'Todos os cadernos operacionais internos são protegidos por autenticação corporativa verificada para preservar a propriedade intelectual e a segurança jurídica das equipes.',
-    actionLabel: 'Solicitar Credenciamento Institucional',
+      'Cada artigo exibe seu status de revisão (Atualizado ou Revisão Pendente após 12 meses), histórico de leitura, diagramas de fluxo e termos técnicos explicados no glossário interativo.',
+    actionLabel: 'Criar Conta ou Acessar Plataforma',
     actionHref: '#sobre',
   },
 ] as const;
@@ -456,7 +456,7 @@ export function toggleFaqAccordionItem(
   return allowMultiple ? [...openIds, targetId] : [targetId];
 }
 
-export const PROJECT_TITLE = 'Base de Conhecimento';
+export const PROJECT_TITLE = 'Base SST';
 
 /**
  * Computes clamped [0, 100] reading progress percentage from scroll position.
@@ -475,7 +475,7 @@ export function formatNormativeCitation(
   title: string,
   normativeRef: string
 ): string {
-  return `BASE DE CONHECIMENTO SST & ESOCIAL — [${code.trim()}] ${title.trim()}. Fundamento Legal: ${normativeRef.trim()}. Curadoria Técnica: Guilherme & Victor (2026).`;
+  return `BASE DE CONHECIMENTO SST & ESOCIAL — [${code.trim()}] ${title.trim()}. Fundamento Legal: ${normativeRef.trim()}. Idealização: Victor Cardoso & Guilherme Cruz · Consultoria Técnica: Sabrina Fraguela & João Sanchez (2026).`;
 }
 
 export interface HeroArchitecturalPlate {
@@ -492,28 +492,28 @@ export const HERO_ARCHITECTURAL_PLATES: readonly HeroArchitecturalPlate[] = [
   {
     id: 'plate-fabril',
     index: '01',
-    accessionCode: 'ACC. 2026.01 · NHO-01 / NR-12',
-    label: 'Manutenção & Operação Fabril',
-    caption: 'Controle de fontes de ruído contínuo, bloqueio LOTO e rastreabilidade ambiental para o evento S-2240.',
+    accessionCode: 'MOD. EVENTOS · S-2210 A S-2240',
+    label: 'Eventos de SST no eSocial',
+    caption: 'Procedimentos passo a passo para envio de CAT (S-2210), ASO (S-2220), Toxicológico (S-2221) e Fatores de Risco (S-2240).',
     normativeAnchor: 'S-2240 · Tabela 24',
     imageSrc: '/assets/aistudio/ambiente-fabril-manutencao_af304276.webp',
   },
   {
     id: 'plate-engenharia',
     index: '02',
-    accessionCode: 'ACC. 2026.02 · NR-18 / NR-35',
-    label: 'Canteiro de Engenharia & Altura',
-    caption: 'Projetos de proteção coletiva (EPC), linhas de vida certificadas e inventário dinâmico do PGR.',
+    accessionCode: 'MOD. GRO · NR-01 / NR-07 / NR-15',
+    label: 'GRO, PGR, PCMSO & LTCAT',
+    caption: 'Guias práticos sobre gerenciamento de riscos, diferenças entre LI e LP, PPP eletrônico e prazos de validade.',
     normativeAnchor: 'NR-01 · GRO & PGR',
     imageSrc: '/assets/aistudio/canteiro-obras-engenharia_6dfcef7e.webp',
   },
   {
     id: 'plate-auditoria',
     index: '03',
-    accessionCode: 'ACC. 2026.03 · LEI 8.213/91',
-    label: 'Auditoria & Diagnóstico em Campo',
-    caption: 'Coerência estrita entre o levantamento quantitativo em campo, o LTCAT e a transmissão e-CAC.',
-    normativeAnchor: 'PPP Eletrônico · IN 128',
+    accessionCode: 'MOD. COLETIVO & TI · E-CAC / XML',
+    label: 'Padronização Operacional & e-CAC',
+    caption: 'Scripts de atendimento, tratativa de protocolos, feedback 24h, procuração eletrônica no e-CAC e análise de XML.',
+    normativeAnchor: 'e-CAC · Sigo Web',
     imageSrc: '/assets/aistudio/consultoria-auditoria-sst_fd37d9f7.webp',
   },
 ] as const;
@@ -716,18 +716,18 @@ export const NORMATIVE_DOSSIERS: readonly NormativeDossier[] = [
     code: 'e-CAC',
     accessionNumber: 'DOC. 11 · INFRAESTRUTURA XML',
     domain: 'Webservice',
-    title: 'Mensageria TLS/SOAP, Schemas XSD & Certificação ICP-Brasil',
+    title: 'Procuração Eletrônica e-CAC, Schemas XML, SMTP & VPN',
     normativeRef: 'Manual de Orientação do Desenvolvedor eSocial v1.12 · ICP-Brasil',
     readingTime: '5 min de leitura',
     imageSrc: '/assets/aistudio/treinamento-instrucao-equipe_04486f93.webp',
     pullQuote:
-      'A integridade criptográfica do XML garante que o laudo de engenharia chegue ao ambiente nacional sem distorções.',
+      'A configuração correta da procuração no e-CAC e a leitura das tags XML garantem envios sem bloqueios operacionais.',
     synthesis:
-      'A transmissão dos lotes de eventos SST ao ambiente nacional do eSocial requer comunicação mTLS com certificados digitais ICP-Brasil (A1 ou A3), assinatura XMLDSig (SHA-256) e validação prévia contra os schemas XSD vigentes (S-1.3), tratando códigos de retorno como 200 (Sucesso), 401 (Falha de Regra) e 162 (Duplicidade).',
+      'Abrange a delegação de permissões de SST no portal e-CAC da Receita Federal, a transmissão de lotes de eventos com certificados ICP-Brasil (A1 ou A3), a leitura das tags de retorno em arquivos XML e os guias de suporte técnico para configuração de SMTP e VPN.',
     auditChecklist: [
-      'Monitoramento proativo de vencimento do Certificado Digital A1 e cadeia ICP-Brasil v5.',
-      'Validação sintática XSD local antes do disparo para o webservice de recepção.',
-      'Guarda indexada do número de recibo (nrRecibo) para eventuais retificações (indRetif=2).',
+      'Conferência dos poderes de transmissão dos eventos S-2210, S-2220 e S-2240 na procuração e-CAC.',
+      'Inspeção das tags de evento, recibo (nrRecibo) e código de retorno nos arquivos XML.',
+      'Padronização de portas, TLS e autenticação nos servidores SMTP e conexões VPN.',
     ],
   },
   {
@@ -782,39 +782,39 @@ export interface FooterSocialChannel {
 
 export const INSTITUTIONAL_FOOTER_LINKS: readonly FooterInstitutionalLink[] = [
   { id: 'hero', label: 'Visão Geral', href: '#hero', indexCode: '01' },
-  { id: 'ideia', label: 'A Ideia & Manifesto', href: '#ideia', indexCode: '02' },
-  { id: 'ensaio', label: 'Cadernos Editoriais', href: '#ensaio', indexCode: '03' },
-  { id: 'modulos', label: 'Os 4 Pilares do Acervo', href: '#modulos', indexCode: '04' },
-  { id: 'tecnologia', label: 'Engenharia & Pesquisa', href: '#tecnologia', indexCode: '05' },
-  { id: 'criadores', label: 'Os Criadores', href: '#criadores', indexCode: '06' },
+  { id: 'ideia', label: 'Origem & Arquitetura', href: '#ideia', indexCode: '02' },
+  { id: 'ensaio', label: 'Cadernos do Acervo', href: '#ensaio', indexCode: '03' },
+  { id: 'modulos', label: 'Módulos & Laboratório', href: '#modulos', indexCode: '04' },
+  { id: 'tecnologia', label: 'Recursos da Plataforma', href: '#tecnologia', indexCode: '05' },
+  { id: 'criadores', label: 'Equipe & Idealizadores', href: '#criadores', indexCode: '06' },
   { id: 'faq', label: 'Perguntas Frequentes', href: '#faq', indexCode: '07' },
-  { id: 'sobre', label: 'Credenciamento Técnico', href: '#sobre', indexCode: '08' },
+  { id: 'sobre', label: 'Acesso & Participação', href: '#sobre', indexCode: '08' },
 ] as const;
 
 export const INSTITUTIONAL_SOCIAL_CHANNELS: readonly FooterSocialChannel[] = [
   {
-    id: 'linkedin',
-    label: 'LinkedIn',
-    handle: '/in/base-de-conhecimento-sst',
-    href: '#sobre',
-  },
-  {
     id: 'github',
-    label: 'GitHub',
-    handle: 'github.com/base-sst-esocial',
-    href: '#tecnologia',
+    label: 'Repositório GitHub',
+    handle: 'VictorCardosoOl/Base_de_Conhecimento',
+    href: 'https://github.com/VictorCardosoOl/Base_de_Conhecimento',
   },
   {
-    id: 'instagram',
-    label: 'Instagram',
-    handle: '@basedeconhecimento.sst',
-    href: '#ensaio',
+    id: 'linkedin',
+    label: 'Victor Cardoso',
+    handle: 'Idealizador & Arquiteto',
+    href: 'https://victor-cardoso.vercel.app',
   },
   {
     id: 'youtube',
-    label: 'YouTube',
-    handle: 'Canal Técnico SST & eSocial',
-    href: '#modulos',
+    label: 'Guilherme Cruz',
+    handle: 'Idealizador & Desenvolvedor',
+    href: 'https://gcruz.dev.br/links',
+  },
+  {
+    id: 'instagram',
+    label: 'Sobre a Equipe',
+    handle: 'História & Consultoria Técnica',
+    href: '/sobre',
   },
 ] as const;
 
@@ -823,7 +823,7 @@ export const INSTITUTIONAL_SOCIAL_CHANNELS: readonly FooterSocialChannel[] = [
  */
 export function formatFooterCopyright(year: number = new Date().getFullYear()): string {
   const safeYear = Number.isFinite(year) && year >= 2024 ? Math.floor(year) : 2026;
-  return `© ${safeYear} ${PROJECT_TITLE} · Idealizado por Guilherme & Victor. Todos os direitos reservados.`;
+  return `© ${safeYear} ${PROJECT_TITLE} · Idealizado por Victor Cardoso & Guilherme Cruz. Todos os direitos reservados.`;
 }
 
 export interface CardSpotlightCoords {
@@ -1252,7 +1252,7 @@ export const ARCHITECTURE_SCROLL_EXPAND_PLATES: readonly ArchitectureScrollPlate
     code: 'ARQ · 01',
     src: '/assets/aistudio/consultoria-auditoria-sst_fd37d9f7.webp',
     alt: 'Arquitetura documental e auditoria técnica de campo em Saúde e Segurança do Trabalho',
-    title: 'Arquitetura para o Conhecimento Humano',
+    title: 'Conhecimento para o Conhecimento Humano',
     subtitle: 'Onde o rigor da engenharia ocupacional encontra a clareza jurídica.',
     footerLegendTitle: 'Auditoria Técnica de Campo & Rastreabilidade Documental',
     footerLegendText:
@@ -1371,6 +1371,7 @@ export function sanitizeTextInput(input: string, maxLength = 160): string {
   return input
     .replace(/<[^>]*>/g, '')
     .replace(/[\u0000-\u001F\u007F<>]/g, '')
+    .replace(/\b(?:javascript|vbscript|data)\s*:/gi, '')
     .trim()
     .slice(0, Math.max(1, maxLength));
 }
@@ -1512,6 +1513,8 @@ export const VALID_INSTITUTIONAL_PATHS = new Set([
   '/',
   '/index.html',
   '/artigos',
+  '/sobre',
+  '/cookies',
   '/login',
   '/cadastro',
   '/admin',

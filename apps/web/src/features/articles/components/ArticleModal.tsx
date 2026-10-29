@@ -10,20 +10,12 @@ import { FAQItem } from '@/features/articles/types';
 import { useArticleContent } from '@/features/articles/use-article-content';
 import { useReadingGoalTracker } from '@/features/reading/use-reading-goal-tracker';
 import { useReadingProgress } from '@/features/reading/use-reading-progress';
-import dynamic from 'next/dynamic';
-
-const ArticleContent = dynamic(
-  () => import('./ArticleContent').then((mod) => mod.ArticleContent),
-  { ssr: false }
-);
+import { ArticleContent } from './ArticleContent';
 import { ArticleSkeleton } from './ArticleSkeleton';
 import { ArticleActions } from './ArticleActions';
 import { RelatedArticles } from './RelatedArticles';
 import { LazyMount } from '@/components/ui/LazyMount';
-// Avaliação, correção e comentários: código e requisições só perto do fim da leitura.
-const ArticleInteractions = dynamic(() =>
-  import('@/features/content/components/ArticleInteractions').then((mod) => mod.ArticleInteractions)
-);
+import { ArticleInteractions } from '@/features/content/components/ArticleInteractions';
 import { catalogTextOf, readingMinutes } from '@/features/articles/article-meta';
 import { ArticleReadingControls } from './ArticleReadingControls';
 import { TableOfContents } from './TableOfContents';
@@ -211,7 +203,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
       <div
         ref={backdropRef}
         onClick={onClose}
-        className="fixed inset-0 bg-black/60 backdrop-blur-md z-[50] will-change-[opacity]"
+        className="fixed inset-0 bg-black/60 z-[50] will-change-[opacity]"
       />
 
       <div
@@ -219,9 +211,9 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={`modal-title-${item?.id || ''}`}
-        className={`article-sheet fixed inset-x-0 bottom-0 z-[60] rounded-t-[20px] h-[96vh] top-[4vh] ${
+        className={`article-sheet fixed inset-x-0 bottom-0 z-[60] rounded-t-xl h-[96vh] top-[4vh] ${
           isZenMode ? 'max-w-4xl' : 'max-w-[2000px] 4xl:max-w-[2400px]'
-        } mx-auto overflow-hidden transform-gpu will-change-[transform,opacity] transition-[max-width] duration-300 border-t border-x border-border`}
+        } mx-auto overflow-hidden transform-gpu will-change-[transform,opacity] transition-[max-width] duration-200 border-t border-x border-[var(--border-hairline)] bg-[var(--bg-island)]`}
       >
         <div
           ref={modalContainerRef}
@@ -230,20 +222,20 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
           <div ref={modalContentRef}>
             {/* Grab / Drag handle no topo para feedback visual de fechar arrastando */}
             <div className="w-full flex justify-center pt-2.5 pb-1 no-print">
-              <span className="w-12 h-1 rounded-[20px] bg-text-main/20 hover:bg-text-main transition-colors cursor-grab active:cursor-grabbing" aria-hidden="true" />
+              <span className="w-12 h-1 rounded-sm bg-text-main/20 hover:bg-text-main transition-colors cursor-grab active:cursor-grabbing" aria-hidden="true" />
             </div>
 
             {/* Header Section inside the Modal (Zen Mode minimiza distrações) */}
             <nav
               aria-label="Ações do artigo"
-              className="sticky top-0 z-50 px-4 sm:px-8 2xl:px-12 py-3 bg-bg-main/90 backdrop-blur-md border-b border-border transition-colors no-print"
+              className="sticky top-0 z-50 px-4 sm:px-8 2xl:px-12 py-3 bg-[var(--bg-canvas)] border-b border-[var(--border-hairline)] transition-colors no-print"
             >
               <div className="w-full flex items-center justify-between">
                 <div
                   ref={progressRef}
                   aria-hidden="true"
                   data-testid="reading-progress"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-text-main origin-left z-50 pointer-events-none"
+                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--accent-editorial)] origin-left z-50 pointer-events-none"
                   style={{ transform: 'scaleX(0)' }}
                 />
                 <div className={`w-full flex items-center justify-between ${isZenMode ? 'h-10' : 'h-12'}`}>
@@ -251,7 +243,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
                     <button
                       onClick={onClose}
                       aria-label="Voltar para a página anterior"
-                      className="hover:text-text-main transition-colors flex items-center gap-2 py-1.5"
+                      className="hover:text-text-main transition-colors flex items-center gap-2 py-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-editorial)] rounded"
                     >
                       <ArrowLeft size={16} strokeWidth={1.5} />
                       <span className="hidden sm:inline font-mono uppercase text-[11px] tracking-[0.2em]">Voltar</span>
@@ -259,10 +251,10 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
                     
                     {!isZenMode && (
                       <>
-                        <div className="w-[1px] h-4 bg-border hidden sm:block mx-3" />
+                        <div className="w-[1px] h-4 bg-[var(--border-hairline)] hidden sm:block mx-3" />
                         <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.2em] font-mono opacity-80">
                           <button onClick={onClose} className="hover:text-text-main transition-colors">INÍCIO</button>
-                          <span className="text-border">/</span>
+                          <span className="text-[var(--border-hairline)]">/</span>
                           <span className="text-text-main font-semibold">{item?.category}</span>
                         </div>
                       </>
@@ -278,12 +270,12 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
                       onTypographyChange={setTypography}
                     />
 
-                    <div className="w-[1px] h-4 bg-border mx-2" />
+                    <div className="w-[1px] h-4 bg-[var(--border-hairline)] mx-2" />
 
                     <button
                       onClick={onClose}
                       aria-label="Fechar Modal de Artigo"
-                      className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-main transition-colors transform-gpu active:scale-95"
+                      className="p-1.5 rounded-md hover:bg-[var(--bg-paper-warm)] text-text-muted hover:text-text-main transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-editorial)]"
                     >
                       <X size={18} />
                     </button>

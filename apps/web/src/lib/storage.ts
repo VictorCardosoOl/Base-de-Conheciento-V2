@@ -9,8 +9,15 @@ export const safeStorage = {
     try {
       const item = window.localStorage.getItem(key);
       if (item === null) return fallback;
-      return JSON.parse(item) as T;
-    } catch {
+      try {
+        return JSON.parse(item) as T;
+      } catch {
+        return item as unknown as T;
+      }
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`[safeStorage] Falha ao ler chave "${key}":`, err);
+      }
       return fallback;
     }
   },
@@ -18,7 +25,14 @@ export const safeStorage = {
   getString(key: string, fallback = ''): string {
     if (typeof window === 'undefined') return fallback;
     try {
-      return window.localStorage.getItem(key) ?? fallback;
+      const raw = window.localStorage.getItem(key);
+      if (raw === null) return fallback;
+      try {
+        const parsed = JSON.parse(raw);
+        return typeof parsed === 'string' ? parsed : raw;
+      } catch {
+        return raw;
+      }
     } catch {
       return fallback;
     }
@@ -27,10 +41,13 @@ export const safeStorage = {
   setItem<T>(key: string, value: T): boolean {
     if (typeof window === 'undefined') return false;
     try {
-      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
-      window.localStorage.setItem(key, serialized);
+      const payload = typeof value === 'string' ? value : JSON.stringify(value);
+      window.localStorage.setItem(key, payload);
       return true;
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`[safeStorage] Quota excedida ou falha ao gravar "${key}":`, err);
+      }
       return false;
     }
   },

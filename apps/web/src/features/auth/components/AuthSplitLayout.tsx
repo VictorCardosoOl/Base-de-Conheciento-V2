@@ -1,93 +1,171 @@
 'use client';
-import React, { useSyncExternalStore } from 'react';
-import dynamic from 'next/dynamic';
-import { useBrowserSnapshot } from '@/hooks/use-browser-snapshot';
 
-// O efeito usa WebGL/canvas: só no navegador.
-const DitherVeil = dynamic(() => import('@/components/ui/DitherVeil'), {
-  ssr: false,
-  loading: () => <div className="w-full h-full bg-black/5" />,
-});
+import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+interface CuratedPlate {
+  index: string;
+  code: string;
+  tag: string;
+  src: string;
+  quote: string;
+  author: string;
+  role: string;
+}
+
+const CURATED_PLATES: ReadonlyArray<CuratedPlate> = [
+  {
+    index: '01',
+    code: 'NR-01 · GRO / PGR',
+    tag: 'SST Enterprise · eSocial S-2240',
+    src: '/assets/aistudio/consultoria-auditoria-sst_fd37d9f7.webp',
+    quote:
+      'A padronização dos laudos técnicos e o cruzamento dos eventos de SST garantem segurança jurídica integral e rastreabilidade pericial em campo.',
+    author: 'Sabrina Fraguela & João Sanchez',
+    role: 'Consultoria Técnica & Engenharia de Segurança',
+  },
+  {
+    index: '02',
+    code: 'TABELA 24 · S-2240',
+    tag: 'Conformidade Previdenciária · LTCAT',
+    src: '/assets/aistudio/inspecao-seguranca-trabalho_dd5a1bfb.webp',
+    quote:
+      'Da caracterização de agentes nocivos ao protocolo XML no e-CAC, cada caderno operacional foi estruturado para eliminar divergências com o PPP eletrônico.',
+    author: 'Victor Cardoso & Guilherme Cruz',
+    role: 'Idealizadores & Arquitetura da Plataforma',
+  },
+  {
+    index: '03',
+    code: 'NR-07 · S-2220',
+    tag: 'Saúde Ocupacional · PCMSO & ASO',
+    src: '/assets/aistudio/profissional-saude-ocupacional_560cc41f.webp',
+    quote:
+      'Integração contínua entre o inventário de riscos do PGR, o monitoramento biológico do PCMSO e a gestão de acidentes de trabalho (CAT / S-2210).',
+    author: 'Acervo Técnico Base de Conhecimento',
+    role: 'Curadoria Multidisciplinar de SST & eSocial',
+  },
+];
 
 /**
- * O efeito exige WebGL: sem ele (navegador antigo, WebGL desligado), o componente
- * lança erro ao montar e derrubaria a tela de login inteira. Nesses casos, sem imagem.
- */
-function readWebGLSupport(): boolean {
-  try {
-    const canvas = document.createElement('canvas');
-    return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'));
-  } catch {
-    return false;
-  }
-}
-
-// A coluna da imagem só aparece a partir do breakpoint `md` do Tailwind.
-const WIDE_QUERY = '(min-width: 768px)';
-
-function subscribeWide(onChange: () => void): () => void {
-  if (typeof window.matchMedia !== 'function') return () => undefined;
-  const query = window.matchMedia(WIDE_QUERY);
-  query.addEventListener('change', onChange);
-  return () => query.removeEventListener('change', onChange);
-}
-
-function readWide(): boolean {
-  return typeof window.matchMedia === 'function' && window.matchMedia(WIDE_QUERY).matches;
-}
-
-const readNarrowOnServer = () => false;
-
-/**
- * Layout das telas de acesso (login, cadastro, recuperação de senha): formulário à
- * esquerda e imagem com efeito de pontilhado à direita. Em telas pequenas a imagem some e
- * o efeito nem é carregado (economiza WebGL, bateria e dados no celular). Visual do
- * GitHub; as cores seguem os tokens do tema para continuar legível no modo escuro.
+ * Layout Editorial Split-Screen limpo e sem excesso de bordas internas:
+ * - Coluna esquerda: superfície limpa em papel arquivístico (Alabaster) / ardósia (Noir).
+ * - Coluna direita: fotografia documental com citação editorial fluida diretamente sobre
+ *   o gradiente da imagem (inspirado nas referências Untitled UI e Nestvested).
  */
 export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
-  const hasWebGL = useBrowserSnapshot(readWebGLSupport, false);
-  const isWide = useSyncExternalStore(subscribeWide, readWide, readNarrowOnServer);
+  const [plateIdx, setPlateIdx] = useState(0);
+  const activePlate = CURATED_PLATES[plateIdx] ?? CURATED_PLATES[0];
+
+  const handlePrev = () => {
+    setPlateIdx((prev) => (prev - 1 + CURATED_PLATES.length) % CURATED_PLATES.length);
+  };
+
+  const handleNext = () => {
+    setPlateIdx((prev) => (prev + 1) % CURATED_PLATES.length);
+  };
+
   return (
-    <div className="flex items-center justify-center w-full min-h-[calc(100vh-200px)]">
-      <div className="glass-card glass-chroma w-full max-w-6xl !rounded-[2.5rem] overflow-hidden text-text-main flex flex-col md:flex-row">
-        <div className="w-full md:w-1/2 p-6 md:p-12 flex flex-col justify-center relative z-10">
-          <div className="w-full max-w-md mx-auto">{children}</div>
+    <div className="flex items-center justify-center w-full py-2 sm:py-6 2xl:py-12 3xl:py-16 4xl:py-24">
+      <div className="w-full max-w-[1200px] 2xl:max-w-[1480px] 3xl:max-w-[1680px] 4xl:max-w-[1920px] rounded-xl 2xl:rounded-2xl border border-[var(--border-hairline)] overflow-hidden text-[var(--text-primary)] bg-[var(--bg-paper)] dark:bg-[#11151A] shadow-sm grid grid-cols-1 lg:grid-cols-12">
+        {/* Coluna Esquerda: Formulário Limpo (Zero Bordas Internas) */}
+        <div className="lg:col-span-6 flex flex-col justify-between p-6 sm:p-10 xl:p-14 2xl:p-16 3xl:p-20 relative z-10 bg-[var(--bg-paper)] dark:bg-[#11151A]">
+          <div className="w-full max-w-[420px] 2xl:max-w-[480px] 3xl:max-w-[520px] mx-auto my-auto py-2">
+            {children}
+          </div>
+
+          {/* Rodapé Discreto sem Linha Divisória */}
+          <div className="w-full max-w-[420px] 2xl:max-w-[480px] 3xl:max-w-[520px] mx-auto pt-6 flex flex-wrap items-center justify-between gap-2 text-[11px] font-tabular text-[var(--text-muted)]/80">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-sm bg-[#B27E29]" />
+              Base SST · Plataforma de Engenharia
+            </span>
+            <span>NR-01 · NR-07 · eSocial S-1.3</span>
+          </div>
         </div>
+
+        {/* Coluna Direita: Fotografia Editorial sem Caixas ou Bordas Internas */}
         <div
           aria-hidden="true"
           data-testid="auth-visual"
-          className="hidden md:block md:w-1/2 relative min-h-[450px] bg-white"
+          className="hidden lg:flex lg:col-span-6 p-3 xl:p-4 2xl:p-5 bg-[var(--bg-paper)] dark:bg-[#11151A]"
         >
-          {hasWebGL && isWide && (
-            <DitherVeil
-              src="https://images.unsplash.com/photo-1737071371043-761e02b1ef95?q=80&w=1400&auto=format&fit=crop"
-              pattern="floyd"
-              pixelSize={2}
-              inkColor="#000000"
-              paperColor="#ffffff"
-              revealRadius={200}
-              softness={0.6}
-              linger={1}
-              fit="contain"
-              rimColor="#ffffff"
-              palette="duotone"
-              levels={2}
-              contrast={1.15}
-              brightness={0}
-              rim={0}
-              reverse={false}
-              wander={false}
-              clickBurst
+          <div className="relative w-full min-h-[600px] 2xl:min-h-[680px] 3xl:min-h-[760px] 4xl:min-h-[840px] h-full rounded-lg 2xl:rounded-xl overflow-hidden bg-[#12161A] flex flex-col justify-between p-8 xl:p-11 2xl:p-14 select-none group border border-[var(--border-hairline)]">
+            {/* Fotografia Documental Real */}
+            <img
+              key={activePlate.src}
+              src={activePlate.src}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover editorial-photo saturate-[0.85] scale-[1.01] transition-all duration-700"
+            />
+
+            {/* Gradiente Suave para Leitura Direta sobre a Imagem (Estilo Untitled UI) */}
+            <div
+              className="absolute inset-0 pointer-events-none"
               style={{
-                width: '100%',
-                height: '100%',
-                position: 'absolute',
-                inset: 0,
-                filter: 'invert(1)',
-                transform: 'scale(1.15)',
+                background:
+                  'linear-gradient(180deg, rgba(11, 13, 16, 0.42) 0%, rgba(11, 13, 16, 0.08) 42%, rgba(11, 13, 16, 0.86) 100%)',
               }}
             />
-          )}
+
+            {/* Topo da Imagem: Badge Elegante Geométrico (Zero-Pill) */}
+            <div className="relative z-10 flex items-center justify-between gap-2 w-full">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/45 backdrop-blur-md text-white whitespace-nowrap">
+                <span className="w-2 h-2 rounded-sm bg-[#68B2A0] shrink-0" />
+                <span className="text-[11px] font-tabular uppercase tracking-wider text-white/95">
+                  {activePlate.tag}
+                </span>
+              </div>
+
+              <span className="px-3 py-1.5 rounded-lg bg-black/40 backdrop-blur-md text-[11px] font-tabular text-[#E8BF74] tracking-wider uppercase whitespace-nowrap">
+                {activePlate.index} / 03 · {activePlate.code.split('·')[0].trim()}
+              </span>
+            </div>
+
+            {/* Base da Imagem: Citação Direta na Foto + Controles Geométricos */}
+            <div className="relative z-10 w-full mt-auto space-y-5 pt-12">
+              <div className="space-y-3">
+                <span className="block font-editorial text-5xl leading-none text-white/80 select-none">
+                  &ldquo;
+                </span>
+                <p className="font-editorial text-xl xl:text-2xl text-white font-normal leading-relaxed">
+                  {activePlate.quote}
+                </p>
+              </div>
+
+              <div className="flex items-end justify-between gap-4 pt-2">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-semibold text-white">
+                    {activePlate.author}
+                  </p>
+                  <p className="text-xs text-white/75">
+                    {activePlate.role}
+                  </p>
+                </div>
+
+                {/* Navegação Geométrica Minimalista (Zero-Pill) */}
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={handlePrev}
+                    aria-label="Item anterior"
+                    className="w-10 h-10 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur-md text-white flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={handleNext}
+                    aria-label="Próximo item"
+                    className="w-10 h-10 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur-md text-white flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

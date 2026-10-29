@@ -68,14 +68,11 @@ export function useClipboardCopy<T extends string = string>(resetDelayMs = 2400)
           setCopiedKey((prev) => (prev === key ? null : prev));
         }, resetDelayMs);
         return true;
-      } catch {
-        setCopiedKey(key);
-        if (timerRef.current) {
-          window.clearTimeout(timerRef.current);
+      } catch (error) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[useClipboardCopy] Falha ao copiar para a área de transferência:', error);
         }
-        timerRef.current = window.setTimeout(() => {
-          setCopiedKey((prev) => (prev === key ? null : prev));
-        }, resetDelayMs);
+        setCopiedKey(null);
         return false;
       }
     },

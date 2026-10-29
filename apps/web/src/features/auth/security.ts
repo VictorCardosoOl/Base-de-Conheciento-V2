@@ -28,12 +28,15 @@ export function isDisposableEmail(email: string): boolean {
   return DISPOSABLE_EMAIL_DOMAINS.has(domain);
 }
 
-// 2. Sanitização de inputs para prevenir XSS e injeções
-export function sanitizeInput(value: string | null | undefined): string {
+// 2. Sanitização unificada de inputs para prevenir XSS, caracteres de controle e injeções
+export function sanitizeInput(value: string | null | undefined, maxLength = 254): string {
   if (!value) return '';
   return value
-    .replace(/[<>]/g, '') // remove tags html básicas
-    .trim();
+    .replace(/<[^>]*>/g, '') // remove tags HTML completas
+    .replace(/[\u0000-\u001F\u007F<>]/g, '') // remove caracteres de controle ASCII e delimitadores residuais
+    .replace(/\b(?:javascript|vbscript|data)\s*:/gi, '') // bloqueia esquemas executáveis
+    .trim()
+    .slice(0, Math.max(1, maxLength));
 }
 
 // 3. Indicador de força e entropia da senha (NIST SP 800-63B)
@@ -83,9 +86,10 @@ export function evaluatePasswordStrength(password: string, username = ''): Passw
 
   let score = 0;
 
-  // Comprimento
-  if (password.length >= 8) score += 1;
-  if (password.length >= 12) score += 1;
+  // Comprimento alinhado ao contrato de cadastro (mínimo 12 caracteres)
+  const minLength = 12;
+  if (password.length >= minLength) score += 1;
+  if (password.length >= minLength + 4) score += 1;
 
   // Variedade de caracteres
   const hasLower = /[a-z]/.test(password);
@@ -94,11 +98,11 @@ export function evaluatePasswordStrength(password: string, username = ''): Passw
   const hasSpecial = /[^a-zA-Z0-9]/.test(password);
 
   const varietyCount = [hasLower, hasUpper, hasDigit, hasSpecial].filter(Boolean).length;
-  if (varietyCount >= 3) score += 1;
-  if (varietyCount === 4 && password.length >= 10) score += 1;
+  if (varietyCount >= 3 && password.length >= minLength) score += 1;
+  if (varietyCount === 4 && password.length >= minLength) score += 1;
 
-  if (password.length < 8) {
-    feedback.push('Use pelo menos 8 caracteres.');
+  if (password.length < minLength) {
+    feedback.push(`Use pelo menos ${minLength} caracteres.`);
   }
   if (!hasDigit && !hasSpecial) {
     feedback.push('Adicione números ou símbolos (@, #, $...).');

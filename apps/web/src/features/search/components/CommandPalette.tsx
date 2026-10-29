@@ -153,9 +153,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           shouldFilter={false} // We handle filtering manually via useSearch
         >
           {/* Campo de Busca Superior */}
-          <div className="flex items-center px-6 py-3.5 bg-white dark:bg-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-stone-200/50 relative">
+          <div className="flex items-center px-6 py-3.5 bg-white dark:bg-[#151A21] rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_12px_40px_rgb(0,0,0,0.45)] border border-stone-200/50 dark:border-white/10 relative">
             <Search
-              className="w-5 h-5 text-stone-400 mr-3 shrink-0"
+              className="w-5 h-5 text-stone-400 dark:text-stone-500 mr-3 shrink-0"
               strokeWidth={2}
             />
             <Command.Input
@@ -163,36 +163,36 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               value={inputValue}
               onValueChange={setInputValue}
               placeholder="O que você procura?"
-              className="flex-1 bg-transparent outline-none text-base sm:text-lg text-stone-800 placeholder:text-stone-300 font-sans font-light"
+              className="flex-1 bg-transparent outline-none text-base sm:text-lg text-stone-800 dark:text-[#F2F0EB] placeholder:text-stone-300 dark:placeholder:text-stone-500 font-sans font-light"
             />
           </div>
 
           {/* Lista de Resultados */}
-          <div className="bg-white dark:bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-stone-200/50 overflow-hidden">
+          <div className="bg-white dark:bg-[#151A21] rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_12px_40px_rgb(0,0,0,0.45)] border border-stone-200/50 dark:border-white/10 overflow-hidden">
             <Command.List
               className="max-h-[50vh] overflow-y-auto p-4 scroll-py-2 no-scrollbar"
               aria-live="polite"
               aria-atomic="true"
             >
               <Command.Empty className="py-12 px-6 flex flex-col items-center text-center">
-                <p className="font-serif text-lg text-stone-800 mb-2">
+                <p className="font-serif text-lg text-stone-800 dark:text-[#F2F0EB] mb-2">
                   Nenhum resultado para &quot;{inputValue}&quot;
                 </p>
-                <p className="text-sm text-stone-500 mb-6 max-w-sm">
+                <p className="text-sm text-stone-500 dark:text-stone-400 mb-6 max-w-sm">
                   Não encontrou o que procurava? Sugira este tópico para que possamos adicioná-lo à nossa base de conhecimento.
                 </p>
                 <button 
                   onClick={() => {
                     window.location.href = `mailto:suporte@exemplo.com?subject=Sugestão de Artigo: ${encodeURIComponent(inputValue)}`;
                   }}
-                  className="px-4 py-2 bg-stone-900 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                  className="px-4 py-2 bg-stone-900 dark:bg-[#2E665A] text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
                 >
                   Solicitar artigo sobre &quot;{inputValue.substring(0, 20)}{inputValue.length > 20 ? '...' : ''}&quot;
                 </button>
               </Command.Empty>
 
               {!inputValue && (
-                <div className="px-3 pt-1 pb-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                <div className="px-3 pt-1 pb-2 text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
                   Navegação & Atalhos
                 </div>
               )}
@@ -205,12 +205,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         onSelectCategory(null);
                         onClose();
                       }}
-                      className="flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer text-stone-800 hover:bg-stone-50 transition-colors duration-150 group aria-selected:bg-stone-50"
+                      className="flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer text-stone-800 dark:text-[#F2F0EB] hover:bg-stone-50 dark:hover:bg-white/5 transition-colors duration-150 group aria-selected:bg-stone-50 dark:aria-selected:bg-white/5"
                     >
-                      <Search className="w-4 h-4 text-stone-400 shrink-0 group-hover:text-stone-600 transition-colors" strokeWidth={2} />
+                      <Search className="w-4 h-4 text-stone-400 shrink-0 group-hover:text-stone-600 dark:group-hover:text-stone-300 transition-colors" strokeWidth={2} />
                       <div className="flex flex-col min-w-0 flex-1">
-                        <span className="font-sans text-base font-normal text-stone-400">
-                          {inputValue ? <><span className="text-stone-400">{inputValue}</span> <span className="text-stone-800">em Biblioteca Completa</span></> : <span className="text-stone-800">Biblioteca Completa</span>}
+                        <span className="font-sans text-base font-normal text-stone-400 dark:text-stone-400">
+                          {inputValue ? <><span className="text-stone-400">{inputValue}</span> <span className="text-stone-800 dark:text-[#F2F0EB]">em Biblioteca Completa</span></> : <span className="text-stone-800 dark:text-[#F2F0EB]">Biblioteca Completa</span>}
                         </span>
                       </div>
                     </Command.Item>
@@ -222,12 +222,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         onSelectQueue();
                         onClose();
                       }}
-                      className="flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer text-stone-800 hover:bg-stone-50 transition-colors duration-150 group aria-selected:bg-stone-50"
+                      className="flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer text-stone-800 dark:text-[#F2F0EB] hover:bg-stone-50 dark:hover:bg-white/5 transition-colors duration-150 group aria-selected:bg-stone-50 dark:aria-selected:bg-white/5"
                     >
-                      <Search className="w-4 h-4 text-stone-400 shrink-0 group-hover:text-stone-600 transition-colors" strokeWidth={2} />
+                      <Search className="w-4 h-4 text-stone-400 shrink-0 group-hover:text-stone-600 dark:group-hover:text-stone-300 transition-colors" strokeWidth={2} />
                       <div className="flex flex-col min-w-0 flex-1">
-                        <span className="font-sans text-base font-normal text-stone-400">
-                           {inputValue ? <><span className="text-stone-400">{inputValue}</span> <span className="text-stone-800">na Minha Lista</span></> : <span className="text-stone-800">Minha Lista de Leitura</span>}
+                        <span className="font-sans text-base font-normal text-stone-400 dark:text-stone-400">
+                           {inputValue ? <><span className="text-stone-400">{inputValue}</span> <span className="text-stone-800 dark:text-[#F2F0EB]">na Minha Lista</span></> : <span className="text-stone-800 dark:text-[#F2F0EB]">Minha Lista de Leitura</span>}
                         </span>
                       </div>
                     </Command.Item>
@@ -237,7 +237,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
               {filteredArticles.length > 0 && (
                 <div className="mt-2 space-y-1">
-                  <div className="px-3 pt-2 pb-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                  <div className="px-3 pt-2 pb-2 text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
                     Sugestões
                   </div>
                   {filteredArticles.slice(0, 15).map((item) => (
@@ -247,22 +247,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         onSelectArticle(item);
                         onClose();
                       }}
-                      className="flex items-center justify-between gap-4 px-4 py-3 rounded-2xl hover:bg-stone-50 cursor-pointer text-stone-800 transition-colors duration-150 group aria-selected:bg-stone-50"
+                      className="flex items-center justify-between gap-4 px-4 py-3 rounded-2xl hover:bg-stone-50 dark:hover:bg-white/5 cursor-pointer text-stone-800 dark:text-[#F2F0EB] transition-colors duration-150 group aria-selected:bg-stone-50 dark:aria-selected:bg-white/5"
                     >
                       <div className="flex items-center gap-4 min-w-0 flex-1">
-                        <Search className="w-4 h-4 text-stone-400 shrink-0 group-hover:text-stone-600 transition-colors" strokeWidth={2} />
+                        <Search className="w-4 h-4 text-stone-400 shrink-0 group-hover:text-stone-600 dark:group-hover:text-stone-300 transition-colors" strokeWidth={2} />
                         <span className="font-sans text-base font-normal truncate">
                            {inputValue ? (
                              <>
                                <span className="text-stone-400">{inputValue}</span>
-                               <span className="text-stone-800 ml-1">
+                               <span className="text-stone-800 dark:text-[#F2F0EB] ml-1">
                                  {item.question.toLowerCase().startsWith(inputValue.toLowerCase()) 
                                    ? item.question.substring(inputValue.length) 
                                    : item.question}
                                </span>
                              </>
                            ) : (
-                             <span className="text-stone-800">{item.question}</span>
+                             <span className="text-stone-800 dark:text-[#F2F0EB]">{item.question}</span>
                            )}
                         </span>
                       </div>
@@ -272,16 +272,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               )}
 
               {showTheme && (
-                <div className="mt-2 border-t border-stone-100 pt-2 space-y-1">
+                <div className="mt-2 border-t border-stone-100 dark:border-white/10 pt-2 space-y-1">
                   <Command.Item
                     onSelect={() => {
                       onToggleTheme();
                       onClose();
                     }}
-                    className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-stone-50 cursor-pointer transition-colors duration-150 aria-selected:bg-stone-50 group"
+                    className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-stone-50 dark:hover:bg-white/5 cursor-pointer transition-colors duration-150 aria-selected:bg-stone-50 dark:aria-selected:bg-white/5 group"
                   >
-                    <Search className="w-4 h-4 text-stone-400 shrink-0 group-hover:text-stone-600 transition-colors" strokeWidth={2} />
-                    <span className="font-sans text-base font-normal text-stone-800">
+                    <Search className="w-4 h-4 text-stone-400 shrink-0 group-hover:text-stone-600 dark:group-hover:text-stone-300 transition-colors" strokeWidth={2} />
+                    <span className="font-sans text-base font-normal text-stone-800 dark:text-[#F2F0EB]">
                       Alternar para Modo {isDarkMode ? 'Claro' : 'Escuro'}
                     </span>
                   </Command.Item>

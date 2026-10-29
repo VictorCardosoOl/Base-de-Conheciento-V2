@@ -20,6 +20,6 @@ describe('InstitutionalNavbar', () => {
     // Garante links da landing page e CTAs
     expect(screen.getByText('Visão Geral')).toBeDefined();
     expect(screen.getByText('Recursos')).toBeDefined();
-    expect(screen.getByText('Experimentar')).toBeDefined();
+    expect(screen.getByText('Entrar')).toBeDefined();
   });
 });

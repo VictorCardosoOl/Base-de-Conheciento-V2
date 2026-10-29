@@ -135,7 +135,21 @@ const ScrollStack: React.FC<ScrollStackProps> = ({
       onStackComplete,
     };
     scheduleMeasureRef.current?.();
-  });
+  }, [
+    itemDistance,
+    itemStackDistance,
+    stackPosition,
+    itemScale,
+    baseScale,
+    dimAmount,
+    blurAmount,
+    tiltAmount,
+    rotationAmount,
+    holdDistance,
+    smoothScroll,
+    snap,
+    onStackComplete,
+  ]);
 
   useLayoutEffect(() => {
     const root = rootRef.current;

@@ -40,10 +40,10 @@ export const SunburstEmblem: React.FC<SunburstEmblemProps> = ({
       {/* Raios radiais precisos */}
       {ticks.map((angle) => {
         const rad = (angle * Math.PI) / 180;
-        const x1 = 24 + 13 * Math.cos(rad);
-        const y1 = 24 + 13 * Math.sin(rad);
-        const x2 = 24 + 20 * Math.cos(rad);
-        const y2 = 24 + 20 * Math.sin(rad);
+        const x1 = (24 + 13 * Math.cos(rad)).toFixed(4);
+        const y1 = (24 + 13 * Math.sin(rad)).toFixed(4);
+        const x2 = (24 + 20 * Math.cos(rad)).toFixed(4);
+        const y2 = (24 + 20 * Math.sin(rad)).toFixed(4);
 
         return (
           <line

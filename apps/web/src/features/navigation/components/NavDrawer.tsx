@@ -57,7 +57,9 @@ export function NavDrawer({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const selectedCategory =
-    pathname === '/' ? (searchParams?.get('category') as Category | null) ?? null : currentCategory;
+    pathname === '/' || pathname === '/artigos'
+      ? (searchParams?.get('category') as Category | null) ?? null
+      : currentCategory;
   const currentArticleId = pathname?.startsWith('/artigo/')
     ? decodeURIComponent(pathname.slice('/artigo/'.length))
     : null;

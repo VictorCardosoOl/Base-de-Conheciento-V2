@@ -18,224 +18,186 @@
  * por prefers-reduced-motion.
  */
 :root {
-  /* ── Paleta Monocromática Minimalista (Preto e Branco) ────────────────────── */
-  --mesh-1: #111111; /* preto puro para acentos e ações principais */
-  --mesh-2: #444444; /* cinza escuro neutro */
-  --mesh-3: #1a1a1a; /* quase preto */
-  --mesh-4: #666666; /* cinza médio */
-  --mesh-base: #f7f7f7; /* branco gelo limpo */
-  --glass-accent-deep: #000000;
+  /* ── Paleta Arquitetural Sóbria & Editorial ────────────────────────────── */
+  --mesh-1: #16181A;
+  --mesh-2: #3B4045;
+  --mesh-3: #234F46;
+  --mesh-4: #595E66;
+  --mesh-base: var(--bg-main, #F4F2ED);
+  --glass-accent-deep: #16181A;
 
-  /* ── Superfície (sem desfoque) ─────────────────────────────────────────── */
-  --glass-surface: #ffffff;
-  --glass-bg: #ffffff;
-  --glass-bg-strong: #ffffff;
-  --glass-bg-hover: #f3f3f3;
+  /* ── Superfície Sólida (Zero Glassmorphism Slop) ───────────────────────── */
+  --glass-surface: var(--bg-paper, #FAF9F6);
+  --glass-bg: var(--bg-island, #FFFFFF);
+  --glass-bg-strong: var(--bg-elevated, #EAE7DF);
+  --glass-bg-hover: var(--bg-paper-warm, #EFECE5);
   --glass-tint: transparent;
 
-  /* ── Cromo (com desfoque) ──────────────────────────────────────────────── */
-  --glass-blur: 16px;
-  --glass-blur-strong: 20px;
+  /* ── Cromo Sólido (Sem desfoques pesados de GPU) ────────────────────────── */
+  --glass-blur: 0px;
+  --glass-blur-strong: 0px;
   --glass-saturate: 100%;
 
-  /* ── Luz e Bordas ──────────────────────────────────────────────────────── */
-  --glass-edge: #000000;
+  /* ── Linhas de Borda Secas de Baixo Contraste (1px) ────────────────────── */
+  --glass-edge: var(--border-hairline, rgba(22, 24, 26, 0.11));
   --glass-edge-width: 1px;
   --glass-specular: none;
-  --glass-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03);
-  --glass-shadow-2: 0 2px 8px rgba(0, 0, 0, 0.06), 0 12px 24px -4px rgba(0, 0, 0, 0.08);
-  --glass-shadow-3: 0 4px 16px rgba(0, 0, 0, 0.08), 0 24px 48px -12px rgba(0, 0, 0, 0.12);
+  --glass-shadow-1: 0 1px 2px rgba(22, 24, 26, 0.04);
+  --glass-shadow-2: 0 1px 3px rgba(22, 24, 26, 0.06);
+  --glass-shadow-3: 0 2px 6px rgba(22, 24, 26, 0.08);
   --glass-chroma: none;
 
-  /* Superfície de leitura: branco límpido com texto preto profundo */
-  --reading-surface: #ffffff;
-  --reading-text: #111111;
+  /* Superfície de leitura: papel de arquivo com texto escuro profundo */
+  --reading-surface: var(--bg-island, #FFFFFF);
+  --reading-text: var(--text-main, #16181A);
 
-  /* ── Estados Monocromáticos (Alto contraste B&W) ─────────────────────────── */
-  --tone-info: #111111;
-  --tone-info-bg: rgba(0, 0, 0, 0.06);
-  --tone-success: #111111;
-  --tone-success-bg: rgba(0, 0, 0, 0.06);
-  --tone-warning: #111111;
-  --tone-warning-bg: rgba(0, 0, 0, 0.06);
-  --tone-danger: #111111;
-  --tone-danger-bg: rgba(0, 0, 0, 0.08);
+  /* ── Estados Técnicos Integrados à Paleta Editorial ────────────────────── */
+  --tone-info: #234F46;
+  --tone-info-bg: rgba(35, 79, 70, 0.06);
+  --tone-success: #234F46;
+  --tone-success-bg: rgba(35, 79, 70, 0.06);
+  --tone-warning: #B27E29;
+  --tone-warning-bg: rgba(178, 126, 41, 0.08);
+  --tone-danger: #A3221B;
+  --tone-danger-bg: rgba(163, 34, 27, 0.07);
 
   /* ── Tipografia e ritmo ────────────────────────────────────────────────── */
   --measure-reading: 70ch;
   --space-page: clamp(1rem, 0.6rem + 1.6vw, 2rem);
-  --control-h: 2.75rem;
-  --control-h-sm: 2.25rem;
+  --control-h: 2.5rem;
+  --control-h-sm: 2.125rem;
 
-  /* ── Forma: Raio Uniforme Unificado em Todos os Elementos (20px) ───────── */
-  --glass-radius-unified: 20px;
-  --glass-radius-sm: 20px;
-  --glass-radius-md: 20px;
-  --glass-radius-lg: 20px;
-  --glass-radius-xl: 20px;
-  --glass-radius-pill: 20px;
+  /* ── Forma: Raios Contidos Sóbrios (4px a 8px) ─────────────────────────── */
+  --glass-radius-unified: 8px;
+  --glass-radius-sm: 4px;
+  --glass-radius-md: 6px;
+  --glass-radius-lg: 8px;
+  --glass-radius-xl: 10px;
+  --glass-radius-pill: 6px;
 
-  /* ── Movimento: rápido para responder, suave para assentar ─────────────── */
+  /* ── Movimento: Rápido e Silencioso (120ms a 180ms ease-out) ───────────── */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-elastic: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-elastic: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-quick: cubic-bezier(0.4, 0, 1, 1);
-  --dur-instant: 90ms;
-  --dur-fast: 160ms;
-  --dur-base: 260ms;
-  --dur-slow: 420ms;
+  --dur-instant: 75ms;
+  --dur-fast: 140ms;
+  --dur-base: 180ms;
+  --dur-slow: 240ms;
 }
 
 :root.dark,
 html.dark {
-  --mesh-1: #ffffff;
-  --mesh-2: #cccccc;
-  --mesh-3: #888888;
-  --mesh-4: #444444;
-  --mesh-base: #000000;
-  --glass-accent-deep: #ffffff;
+  --mesh-1: #F2F0EB;
+  --mesh-2: #B4BCC6;
+  --mesh-3: #8AB5A8;
+  --mesh-4: #848D99;
+  --mesh-base: var(--bg-main, #0B0D10);
+  --glass-accent-deep: #F2F0EB;
 
-  --glass-surface: #0a0a0a;
-  --glass-bg: #0a0a0a;
-  --glass-bg-strong: #111111;
-  --glass-bg-hover: #181818;
+  --glass-surface: var(--bg-paper, #11151A);
+  --glass-bg: var(--bg-island, #11151A);
+  --glass-bg-strong: var(--bg-elevated, #161B21);
+  --glass-bg-hover: var(--bg-paper-warm, #161B21);
   --glass-tint: transparent;
-  --glass-edge: #ffffff;
+  --glass-edge: var(--border-hairline, rgba(242, 240, 235, 0.12));
   --glass-specular: none;
-  --glass-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
-  --glass-shadow-2: 0 2px 8px rgba(0, 0, 0, 0.6), 0 12px 24px -4px rgba(0, 0, 0, 0.4);
-  --glass-shadow-3: 0 4px 16px rgba(0, 0, 0, 0.7), 0 24px 48px -12px rgba(0, 0, 0, 0.5);
+  --glass-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --glass-shadow-2: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --glass-shadow-3: 0 2px 6px rgba(0, 0, 0, 0.6);
   --glass-chroma: none;
 
-  --reading-surface: #0a0a0a;
-  --reading-text: #ffffff;
+  --reading-surface: var(--bg-island, #11151A);
+  --reading-text: var(--text-main, #F2F0EB);
 
-  --tone-info: #ffffff;
-  --tone-info-bg: rgba(255, 255, 255, 0.1);
-  --tone-success: #ffffff;
-  --tone-success-bg: rgba(255, 255, 255, 0.1);
-  --tone-warning: #ffffff;
-  --tone-warning-bg: rgba(255, 255, 255, 0.1);
-  --tone-danger: #ffffff;
-  --tone-danger-bg: rgba(255, 255, 255, 0.12);
+  --tone-info: #8AB5A8;
+  --tone-info-bg: rgba(138, 181, 168, 0.08);
+  --tone-success: #8AB5A8;
+  --tone-success-bg: rgba(138, 181, 168, 0.08);
+  --tone-warning: #D9A44E;
+  --tone-warning-bg: rgba(217, 164, 78, 0.1);
+  --tone-danger: #F26A36;
+  --tone-danger-bg: rgba(242, 106, 54, 0.1);
 }
 
-/* ── 1. Fundo: uma camada fixa, estática, isolada (contain) com aceleração por hardware ───────────────── */
+/* ── 1. Fundo: Superfície Sólida Limpa (Sem Malhas Sintéticas de IA) ─────── */
 .liquid-backdrop {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   contain: strict;
-  transform: translateZ(0);
-  background:
-    radial-gradient(75vmax 55vmax at -5% -10%, rgba(0, 0, 0, 0.02), transparent 70%),
-    radial-gradient(65vmax 50vmax at 105% 8%, rgba(0, 0, 0, 0.03), transparent 70%),
-    var(--mesh-base);
+  background: var(--bg-canvas, var(--bg-main));
 }
 
 :root.dark .liquid-backdrop,
 html.dark .liquid-backdrop {
-  background:
-    radial-gradient(75vmax 55vmax at -5% -10%, rgba(255, 255, 255, 0.03), transparent 70%),
-    radial-gradient(65vmax 50vmax at 105% 8%, rgba(255, 255, 255, 0.02), transparent 70%),
-    var(--mesh-base);
+  background: var(--bg-canvas, var(--bg-main));
 }
 
 /* ── 2–4. Materiais ───────────────────────────────────────────────────────── */
 @layer components {
-  /* Superfície: sem desfoque */
+  /* Superfície Sólida sem Desfoque */
   .glass,
   .glass-card {
     position: relative;
-    isolation: isolate;
     background: var(--glass-surface);
-    box-shadow: var(--glass-specular), var(--glass-shadow-1);
+    border: 1px solid var(--border-hairline);
     border-radius: var(--glass-radius-md);
+    box-shadow: var(--glass-shadow-1);
   }
 
   .glass-card {
     border-radius: var(--glass-radius-lg);
-    box-shadow: var(--glass-specular), var(--glass-shadow-2);
+    box-shadow: var(--glass-shadow-1);
   }
 
-  /* Cromo: com desfoque, para o que fica sobre conteúdo em movimento */
+  /* Cromo: Superfície Sólida Elevada sem Desfoque */
   .glass-strong {
     position: relative;
-    isolation: isolate;
-    background: linear-gradient(var(--glass-tint), var(--glass-tint)), var(--glass-bg-strong);
-    -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
-    backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
-    box-shadow: var(--glass-specular), var(--glass-shadow-2);
+    background: var(--glass-bg-strong);
+    border: 1px solid var(--border-hairline);
     border-radius: var(--glass-radius-md);
+    box-shadow: var(--glass-shadow-1);
   }
 
-  /* Borda luminosa (anel do gradiente recortado por máscara) */
+  /* Remoção dos anéis de borda com gradiente e máscara */
   .glass::before,
   .glass-strong::before,
   .glass-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    border-radius: inherit;
-    padding: var(--glass-edge-width);
-    background: var(--glass-edge);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-    pointer-events: none;
+    display: none !important;
   }
 
   .glass-chroma {
-    box-shadow: var(--glass-chroma), var(--glass-specular), var(--glass-shadow-2);
+    box-shadow: var(--glass-shadow-1);
   }
 
-  /* Item dentro de outra superfície: só cor e linha, nada de camadas extras */
+  /* Item dentro de outra superfície: 1px borda sóbria */
   .glass-flat {
     position: relative;
-    background: color-mix(in srgb, var(--glass-bg-strong) 70%, transparent);
-    border: 1px solid color-mix(in srgb, var(--text-main) 9%, transparent);
-    box-shadow: var(--glass-specular);
+    background: var(--glass-bg-strong);
+    border: 1px solid var(--border-hairline);
     border-radius: var(--glass-radius-sm);
   }
 
-  /* Interativo: sobe e acende no hover (CSS puro, sem acompanhar o ponteiro) */
+  /* Interativo: Microinterações Rápidas e Silenciosas (sem saltos 3D ou escalas) */
   .glass-interactive {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    will-change: transform, box-shadow;
     transition:
-      transform var(--dur-base) var(--ease-spring),
-      box-shadow var(--dur-base) var(--ease-spring),
-      background-color var(--dur-fast) ease,
-      border-color var(--dur-fast) ease;
+      border-color var(--dur-fast) ease,
+      background-color var(--dur-fast) ease;
   }
 
   .glass-interactive::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.22), transparent 60%);
-    opacity: 0;
-    transition: opacity var(--dur-base) ease;
+    display: none !important;
   }
 
   .glass-interactive:hover {
-    transform: translate3d(0, -3px, 0);
-    box-shadow: var(--glass-specular), var(--glass-shadow-3);
-  }
-
-  .glass-interactive:hover::after,
-  .glass-interactive:focus-visible::after {
-    opacity: 1;
+    background-color: var(--glass-bg-hover);
+    border-color: var(--border);
   }
 
   .glass-interactive:active {
-    transform: translateY(0) scale(0.985);
-    transition-duration: var(--dur-instant);
+    transform: none;
   }
 
   .glass-pill {

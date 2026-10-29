@@ -43,7 +43,7 @@ export function ArticleHero({
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-2.5">
             <Link
-              href={`/?category=${encodeURIComponent(article.category)}`}
+              href={`/artigos?category=${encodeURIComponent(article.category)}`}
               className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-bg-main bg-text-main hover:opacity-90 transition-opacity rounded-full"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-bg-main opacity-90" aria-hidden="true" />

@@ -17,14 +17,12 @@ import {
   Send,
   ChevronLeft,
   ChevronRight,
-  Camera,
   Copy,
   Check,
   BookOpen,
 } from 'lucide-react';
 import { InstitutionalNavbar } from './InstitutionalNavbar';
 import { CommandPaletteModal } from './CommandPaletteModal';
-import { AuthModal } from './AuthModal';
 import { FaqAccordionSection } from './FaqAccordionSection';
 import { NormativeDossierDrawer } from './NormativeDossierDrawer';
 import { InstitutionalFooter } from './InstitutionalFooter';
@@ -41,7 +39,6 @@ import {
   ARCHITECTURE_SCROLL_EXPAND_PLATES,
   isValidCorporateEmail,
   sanitizeTextInput,
-  validateImageUploadFile,
   resolveInstitutionalRoute,
 } from '../utils/sstCalculations';
 import {
@@ -55,6 +52,7 @@ import {
 } from '../data/sstCatalogData';
 import { useCardSpotlight, useClipboardCopy } from '../hooks/useInteractiveHooks';
 import { useThemePreference } from '@/features/shell/use-theme-preference';
+import { AnalyticsService } from '@/features/analytics/analytics-service';
 
 gsap.registerPlugin(ScrollTrigger);
 gsap.config({ force3D: true });
@@ -80,18 +78,7 @@ export const InstitutionalLandingPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('hero');
   const { isDarkMode, setIsDarkMode } = useThemePreference();
   const themeMode: 'alabaster' | 'noir' = isDarkMode ? 'noir' : 'alabaster';
-  const setThemeMode = (modeOrUpdater: 'alabaster' | 'noir' | ((prev: 'alabaster' | 'noir') => 'alabaster' | 'noir')) => {
-    if (typeof modeOrUpdater === 'function') {
-      const next = modeOrUpdater(themeMode);
-      setIsDarkMode(next === 'noir');
-    } else {
-      setIsDarkMode(modeOrUpdater === 'noir');
-    }
-  };
-  const [reducedMotion, setReducedMotion] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  });
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   // Hero Interactive Plate & Monograph States
   const [archPlateIdx, setArchPlateIdx] = useState(0);
@@ -112,9 +99,6 @@ export const InstitutionalLandingPage: React.FC = () => {
 
   // Modals & Notifications
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [authBannerEmail, setAuthBannerEmail] = useState<string | null>(null);
 
   // Lead Capture Form
   const [contactName, setContactName] = useState('');
@@ -124,70 +108,26 @@ export const InstitutionalLandingPage: React.FC = () => {
   const [contactSubmitted, setContactSubmitted] = useState(false);
 
   // Catch-All 404 Routing State
-  const [routeState, setRouteState] = useState(() =>
-    typeof window !== 'undefined'
-      ? resolveInstitutionalRoute(window.location.pathname, window.location.hash)
-      : { isNotFound: false, normalizedPath: '/', normalizedHash: '', attemptedTarget: '/' }
-  );
+  const [routeState, setRouteState] = useState({
+    isNotFound: false,
+    normalizedPath: '/',
+    normalizedHash: '',
+    attemptedTarget: '/',
+  });
 
-  // Custom Walking Photo Upload for Guilherme & Victor (with Blob URL lifecycle & MIME validation)
-  const [creatorsWalkPhoto, setCreatorsWalkPhoto] = useState<string>(
-    '/assets/aistudio/consultoria-auditoria-sst_fd37d9f7.webp'
-  );
-  const [photoUploadError, setPhotoUploadError] = useState('');
-  const uploadedBlobUrlRef = useRef<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const creatorsWalkPhoto = '/assets/aistudio/consultoria-auditoria-sst_fd37d9f7.webp';
 
   const handleCardSpotlightMove = useCardSpotlight(reducedMotion);
   const { copiedKey, copyText } = useClipboardCopy(2200);
   const copiedXml = copiedKey === 'xml';
 
   useEffect(() => {
-    return () => {
-      if (uploadedBlobUrlRef.current) {
-        URL.revokeObjectURL(uploadedBlobUrlRef.current);
-      }
-    };
-  }, []);
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const check = validateImageUploadFile(file);
-    if (!check.valid) {
-      setPhotoUploadError(check.error ?? 'Arquivo de imagem invÃ¡lido.');
-      return;
-    }
-
-    setPhotoUploadError('');
-    if (uploadedBlobUrlRef.current) {
-      URL.revokeObjectURL(uploadedBlobUrlRef.current);
-    }
-    const objectUrl = URL.createObjectURL(file);
-    uploadedBlobUrlRef.current = objectUrl;
-    setCreatorsWalkPhoto(objectUrl);
-  };
-
-  useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
     const onChange = () => setReducedMotion(mq.matches);
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (themeMode === 'alabaster') {
-      root.classList.add('theme-alabaster');
-      root.classList.remove('dark');
-      document.body.classList.remove('dark');
-    } else {
-      root.classList.remove('theme-alabaster');
-      root.classList.add('dark');
-      document.body.classList.add('dark');
-    }
-  }, [themeMode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -209,6 +149,7 @@ export const InstitutionalLandingPage: React.FC = () => {
       );
       setRouteState(nextRoute);
     };
+    syncRouteFromLocation();
 
     const handleDelegatedAnchorClick = (e: MouseEvent) => {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
@@ -308,39 +249,42 @@ export const InstitutionalLandingPage: React.FC = () => {
 
     const ctx = gsap.context(() => {
       // -----------------------------------------------------------------------
-      // 1. SEÃ‡ÃƒO I â€” HERO ("BANGRAIN SURYA" EDITORIAL TYPOGRAPHY & HORIZON BANNER):
+      // 1. SEÇÃO I — HERO ("BANGRAIN SURYA" EDITORIAL TYPOGRAPHY & HORIZON BANNER):
       //    Archetype: Horizon Aperture Unfold + Full-Bleed Atmospheric Scrub
       // -----------------------------------------------------------------------
-      gsap.fromTo(
-        '.gsap-hero-meta-col',
-        { y: 14, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 1.05,
-          stagger: 0.1,
-          delay: 0.18,
-          ease: 'power3.out',
-        }
-      );
-
-      gsap.utils.toArray<HTMLElement>('.gsap-hero-meta-col').forEach((col, i) => {
-        const vec = getHeroPlateDivergenceVector(i);
+      const heroMetaCols = gsap.utils.toArray<HTMLElement>('.gsap-hero-meta-col');
+      if (heroMetaCols.length > 0) {
         gsap.fromTo(
-          col,
-          { x: 0 },
+          heroMetaCols,
+          { y: 14, opacity: 0 },
           {
-            x: vec.x * 0.25,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: '#hero',
-              start: 'top top',
-              end: 'bottom top',
-              scrub: 1.45,
-            },
+            y: 0,
+            opacity: 1,
+            duration: 1.05,
+            stagger: 0.1,
+            delay: 0.18,
+            ease: 'power3.out',
           }
         );
-      });
+
+        heroMetaCols.forEach((col, i) => {
+          const vec = getHeroPlateDivergenceVector(i);
+          gsap.fromTo(
+            col,
+            { x: 0 },
+            {
+              x: vec.x * 0.25,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: '#hero',
+                start: 'top top',
+                end: 'bottom top',
+                scrub: 1.45,
+              },
+            }
+          );
+        });
+      }
 
       gsap.fromTo(
         '.gsap-hero-horizon-wrap',
@@ -370,7 +314,7 @@ export const InstitutionalLandingPage: React.FC = () => {
       );
 
       // -----------------------------------------------------------------------
-      // 2. SEÃ‡ÃƒO II â€” A IDEIA ("QUIET REFINEMENT" & "SHAYE"):
+      // 2. SEÇÃO II — A IDEIA ("QUIET REFINEMENT" & "SHAYE"):
       //    Archetype: Alternating Left/Right Hairline Draw + Orthogonal Curtain Clip-Path Wipe
       // -----------------------------------------------------------------------
       gsap.utils.toArray<HTMLElement>('.gsap-foundation-line').forEach((line, idx) => {
@@ -410,39 +354,9 @@ export const InstitutionalLandingPage: React.FC = () => {
       });
 
       // -----------------------------------------------------------------------
-      // 3. SEÃ‡ÃƒO III â€” CADERNO EDITORIAL ABERTO ("GLEAM*"):
-      //    Archetype: Open Editorial Counter-Glide + Center Bar Expand
+      // 3. SEÇÃO III — CADERNO EDITORIAL ABERTO ("GLEAM*"):
+      //    Archetype: Open Editorial Counter-Glide + <ScrollExpand useWindowScroll />
       // -----------------------------------------------------------------------
-      gsap.fromTo(
-        '.gsap-gleam-left-col',
-        { y: 18 },
-        {
-          y: -18,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: '#ensaio',
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: 1.35,
-          },
-        }
-      );
-
-      gsap.fromTo(
-        '.gsap-gleam-center-col',
-        { y: -14 },
-        {
-          y: 14,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: '#ensaio',
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: 1.35,
-          },
-        }
-      );
-
       gsap.fromTo(
         '.gsap-gleam-bar',
         { scaleX: 0, transformOrigin: 'left center' },
@@ -458,12 +372,12 @@ export const InstitutionalLandingPage: React.FC = () => {
       );
 
       // -----------------------------------------------------------------------
-      // 4. SEÃ‡ÃƒO IV â€” OS 4 DOMÃNIOS (<ScrollStack /> FULL-BLEED BANNERS):
+      // 4. SEÇÃO IV — OS 4 DOMÍNIOS (<ScrollStack /> FULL-BLEED BANNERS):
       //    Handled via GPU-composited <ScrollStack useWindowScroll />
       // -----------------------------------------------------------------------
 
       // -----------------------------------------------------------------------
-      // 5. SEÃ‡ÃƒO V â€” ENGENHARIA & MATRIZ:
+      // 5. SEÇÃO V — ENGENHARIA & MATRIZ:
       //    Archetype: 2D Center-Out Geometric Grid Wave
       // -----------------------------------------------------------------------
       gsap.fromTo(
@@ -487,7 +401,7 @@ export const InstitutionalLandingPage: React.FC = () => {
       );
 
       // -----------------------------------------------------------------------
-      // 6. SEÃ‡ÃƒO VI â€” SOBRE & OS CRIADORES (GUILHERME & VICTOR):
+      // 6. SEÇÃO VI — SOBRE & OS CRIADORES (GUILHERME & VICTOR):
       //    Archetype: Panoramic Aperture Clip-Path Expansion + Strip Sweep
       // -----------------------------------------------------------------------
       gsap.fromTo(
@@ -538,7 +452,7 @@ export const InstitutionalLandingPage: React.FC = () => {
       );
 
       // -----------------------------------------------------------------------
-      // SEÃ‡ÃƒO PERGUNTAS FREQUENTES ("FAQ" CADERNO DE DÃšVIDAS):
+      // SEÇÃO PERGUNTAS FREQUENTES ("FAQ" CADERNO DE DÚVIDAS):
       //    Archetype: Editorial Column Glide + Cascading Accordion Row Stagger
       // -----------------------------------------------------------------------
       gsap.fromTo(
@@ -571,7 +485,7 @@ export const InstitutionalLandingPage: React.FC = () => {
       );
 
       // -----------------------------------------------------------------------
-      // 7. SEÃ‡ÃƒO VII â€” CREDENCIAMENTO & DIÃLOGO ("SOBRE"):
+      // 7. SEÇÃO VII — CREDENCIAMENTO & DIÁLOGO ("SOBRE"):
       //    Archetype: Split-Axis Horizontal Convergence + Sequential Blueprint Line Draw
       // -----------------------------------------------------------------------
       gsap.fromTo(
@@ -638,8 +552,8 @@ export const InstitutionalLandingPage: React.FC = () => {
     const ctx = gsap.context(() => {
       gsap.fromTo(
         '.gsap-gleam-essay-content',
-        { y: 12, opacity: 0.45 },
-        { y: 0, opacity: 1, duration: 0.55, ease: 'power3.out', overwrite: 'auto' }
+        { opacity: 0.45 },
+        { opacity: 1, duration: 0.55, ease: 'power3.out', overwrite: 'auto' }
       );
     }, pageRef);
     return () => ctx.revert();
@@ -746,62 +660,41 @@ export const InstitutionalLandingPage: React.FC = () => {
       return;
     }
     if (!isValidCorporateEmail(sanitizedEmail)) {
-      setContactError('Por favor, informe um e-mail corporativo vÃ¡lido.');
+      setContactError('Por favor, informe um e-mail corporativo válido.');
       return;
     }
     if (!sanitizedCompany) {
-      setContactError('Por favor, informe a razÃ£o social ou instituiÃ§Ã£o.');
+      setContactError('Por favor, informe a razão social ou instituição.');
       return;
     }
     setContactName(sanitizedName);
     setContactEmail(sanitizedEmail);
     setContactCompany(sanitizedCompany);
     setContactSubmitted(true);
+    AnalyticsService.trackEvent('lead_submitted', {
+      hasOrganization: Boolean(sanitizedCompany),
+    });
   };
+
+  const prefilledRegisterHref = `/cadastro?${new URLSearchParams({
+    ...(contactName ? { name: contactName } : {}),
+    ...(contactEmail ? { email: contactEmail } : {}),
+    ...(contactCompany ? { org: contactCompany } : {}),
+  }).toString()}`;
 
   return (
     <div
       ref={pageRef}
-      className="relative min-h-screen editorial-grain overflow-x-clip transition-colors duration-500"
+      data-theme-mode={themeMode}
+      className="relative min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] editorial-grain"
     >
       {/* Smart Auto-Hiding Institutional Navbar */}
       <InstitutionalNavbar
         activeSection={activeSection}
-        themeMode={themeMode}
-        onToggleTheme={() => setThemeMode((prev) => (prev === 'noir' ? 'alabaster' : 'noir'))}
         onOpenLogin={handleOpenLogin}
-        onOpenSearch={() => setCommandPaletteOpen(true)}
         isNotFoundView={routeState.isNotFound}
         onNavigateHome={handleReturnHome}
       />
-
-      {/* Toast Notification when Authenticated */}
-      <AnimatePresence>
-        {authBannerEmail && (
-          <motion.div
-            role="status"
-            aria-live="polite"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-            className="fixed bottom-4 sm:bottom-6 inset-x-4 sm:inset-x-auto sm:right-6 z-50 px-5 py-3.5 rounded-2xl atelier-glass-pill shadow-xl flex items-center justify-between sm:justify-start gap-3 text-xs"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <CheckCircle2 className="w-4 h-4 text-[#68B2A0] shrink-0" />
-              <span className="truncate">
-                SessÃ£o corporativa autorizada para <strong>{authBannerEmail}</strong>
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setAuthBannerEmail(null)}
-              className="min-h-[36px] px-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] font-tabular shrink-0 cursor-pointer"
-            >
-              Fechar
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {routeState.isNotFound ? (
         <main className="relative z-10">
@@ -824,7 +717,7 @@ export const InstitutionalLandingPage: React.FC = () => {
       ) : (
         <main className="relative z-10">
         {/* ===================================================================== */}
-        {/* SEÃ‡ÃƒO I â€” HERO ("BANGRAIN SURYA" CLEAN TYPOGRAPHY + HORIZON BANNER)   */}
+        {/* SEÇÃO I — HERO ("BANGRAIN SURYA" CLEAN TYPOGRAPHY + HORIZON BANNER)   */}
         {/* ===================================================================== */}
         <section
           id="hero"
@@ -834,7 +727,7 @@ export const InstitutionalLandingPage: React.FC = () => {
           data-parallax-y={0}
           onMouseMove={handleHeroMouseMove}
           onMouseLeave={handleHeroMouseLeave}
-          className="relative min-h-screen lg:h-screen lg:min-h-[640px] lg:max-h-[1120px] 3xl:max-h-[1280px] flex flex-col justify-between border-b border-[var(--border-hairline)] mesh-gradient-hero overflow-hidden pt-20 sm:pt-24 2xl:pt-28"
+          className="relative min-h-screen lg:h-screen lg:min-h-[640px] lg:max-h-[1120px] 2xl:min-h-[720px] 2xl:max-h-[1200px] 3xl:min-h-[820px] 3xl:max-h-[1360px] 4xl:min-h-[920px] 4xl:max-h-[1500px] flex flex-col justify-between border-b border-[var(--border-hairline)] mesh-gradient-hero overflow-hidden pt-20 sm:pt-24 2xl:pt-32 3xl:pt-40 4xl:pt-48"
         >
           {/* Ambient Chromatic Orbs for Frosted Glass Depth */}
           <div
@@ -847,34 +740,34 @@ export const InstitutionalLandingPage: React.FC = () => {
           />
 
           {/* Upper Editorial Area: Centered 3-Line Pure Headline + Subtitle */}
-          <div className="flex-1 flex flex-col justify-center w-full max-w-[1920px] 3xl:max-w-[2160px] 4xl:max-w-[2400px] mx-auto px-4 sm:px-8 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-40 relative z-10 py-8 lg:py-12">
+          <div className="flex-1 flex flex-col justify-center w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-4 sm:px-8 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44 relative z-10 py-8 lg:py-12 2xl:py-16 3xl:py-20">
             {/* Centerpiece 3-Line Pure Typography */}
             <div
               ref={heroHeadlineLayerRef}
               data-testid="hero-typography-parallax"
-              className="my-auto text-center max-w-5xl 3xl:max-w-6xl mx-auto py-5 sm:py-6 will-change-transform"
+              className="my-auto text-center max-w-5xl 2xl:max-w-6xl 3xl:max-w-7xl mx-auto py-5 sm:py-6 will-change-transform"
             >
               <h1
-                aria-label="CONSTRUÃMOS BASES QUE VÃƒO MUITO ALÃ‰M DA FORMA LEGAL"
+                aria-label="CONSTRUÍMOS BASES QUE VÃO MUITO ALÉM DA FORMA LEGAL"
                 className="flex flex-col items-center justify-center gap-1.5 sm:gap-2 text-[clamp(1.75rem,5.2vw,4.5rem)] font-normal tracking-[-0.03em] uppercase text-[var(--text-primary)] leading-[1.08]"
               >
-                {/* Line 1: CONSTRUÃMOS BASES */}
+                {/* Line 1: CONSTRUÍMOS BASES */}
                 <span className="block">
                   <SplitTextReveal
                     as="span"
                     charStagger={0.014}
-                    text="CONSTRUÃMOS BASES"
+                    text="CONSTRUÍMOS BASES"
                     className="inline-block"
                   />
                 </span>
 
-                {/* Line 2: QUE VÃƒO MUITO ALÃ‰M */}
+                {/* Line 2: QUE VÃO MUITO ALÉM */}
                 <span className="block">
                   <SplitTextReveal
                     as="span"
                     delay={0.08}
                     charStagger={0.014}
-                    text="QUE VÃƒO MUITO ALÃ‰M"
+                    text="QUE VÃO MUITO ALÉM"
                     className="inline-block"
                   />
                 </span>
@@ -894,18 +787,33 @@ export const InstitutionalLandingPage: React.FC = () => {
               </h1>
 
               {/* Centered 2-Line Subtitle directly below headline */}
-              <p className="mt-4 sm:mt-5 2xl:mt-6 text-sm sm:text-base text-[var(--text-secondary)] max-w-lg 2xl:max-w-xl mx-auto leading-[1.7] font-normal">
-                Da estratÃ©gia normativa Ã  mensageria do eSocial, estruturamos bases de conhecimento
-                que conectam equipes, protegem vidas e permanecem.
+              <p className="mt-4 sm:mt-5 2xl:mt-6 text-sm sm:text-base text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.7] font-normal">
+                Portal unificado de procedimentos operacionais, eventos de SST no eSocial (S-2210,
+                S-2220, S-2221 e S-2240), Gestão de Riscos Ocupacionais (PGR, PCMSO, LTCAT) e
+                padronização de atendimento técnico.
               </p>
+
+              {/* Direct Navigation Action Row */}
+              <div className="mt-6 sm:mt-7 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/artigos"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-xs sm:text-sm font-semibold bg-[var(--accent-editorial)] text-white hover:opacity-95 shadow-sm transition-all cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Explorar Catálogo de Artigos</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
           </div>
 
           {/* Bottom Full-Bleed Atmospheric Horizon Banner (Single SST image ready for video embedding) */}
-          <div className="gsap-hero-horizon-wrap relative w-full h-[40vh] sm:h-[42vh] 2xl:h-[45vh] min-h-[260px] max-h-[480px] shrink-0 overflow-hidden border-t border-[var(--border-hairline)] bg-[#0B0F14] group">
+          <div className="gsap-hero-horizon-wrap relative w-full h-[40vh] sm:h-[42vh] 2xl:h-[46vh] 3xl:h-[50vh] 4xl:h-[54vh] min-h-[260px] 2xl:min-h-[320px] 3xl:min-h-[380px] 4xl:min-h-[440px] max-h-[480px] 2xl:max-h-[580px] 3xl:max-h-[680px] 4xl:max-h-[780px] shrink-0 overflow-hidden border-t border-[var(--border-hairline)] bg-[#0B0F14] group">
             <img
-              src="/assets/aistudio/engenharia-seguranca-trabalho_436db01b.webp"
-              alt="Ambiente Operacional e Engenharia de SeguranÃ§a do Trabalho"
+              src="/assets/aistudio/canteiro-obras-engenharia_6dfcef7e.webp"
+              alt="Ambiente Operacional e Engenharia de Segurança do Trabalho"
+              width={1920}
+              height={1080}
               loading="eager"
               fetchPriority="high"
               decoding="async"
@@ -917,61 +825,59 @@ export const InstitutionalLandingPage: React.FC = () => {
             />
 
             {/* Clean Editorial Caption (No Switchers or Buttons) */}
-            <div className="absolute inset-x-0 bottom-4 sm:bottom-5 z-20 w-full max-w-[1920px] 3xl:max-w-[2160px] 4xl:max-w-[2400px] mx-auto px-4 sm:px-8 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-40">
+            <div className="absolute inset-x-0 bottom-4 sm:bottom-5 z-20 w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-4 sm:px-8 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44">
               <div className="inline-flex items-center gap-2 text-xs text-white/90 bg-[#0B0D10]/65 backdrop-blur-xl border border-white/10 px-4 py-2 rounded-full">
                 <span className="font-medium text-white">Ambiente Operacional</span>
-                <span aria-hidden="true" className="text-white/40">Â·</span>
-                <span className="text-white/75">VigilÃ¢ncia e conformidade em SaÃºde e SeguranÃ§a do Trabalho</span>
+                <span aria-hidden="true" className="text-white/40">·</span>
+                <span className="text-white/75">Vigilância e conformidade em Saúde e Segurança do Trabalho</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* ===================================================================== */}
-        {/* SEÃ‡ÃƒO II â€” ARQUITETURA DO PROJETO (SCROLL EXPAND + HOVER LEGEND)      */}
+        {/* SEÇÃO II — ARQUITETURA DO PROJETO (SCROLL EXPAND + HOVER LEGEND)      */}
         {/* ===================================================================== */}
         <section
           id="ideia"
           data-gsap-archetype={SECTION_GSAP_CHOREOGRAPHIES.ideia.archetype}
-          className="relative border-b border-[var(--border-hairline)] mesh-gradient-bento pt-24 lg:pt-36 2xl:pt-44 3xl:pt-52 4xl:pt-60 overflow-x-clip"
+          className="relative border-b border-[var(--border-hairline)] mesh-gradient-bento pt-24 lg:pt-36 2xl:pt-44 3xl:pt-56 4xl:pt-64"
         >
           {/* Ambient Chromatic Orbs for Frosted Glass Refraction */}
-          <div
-            aria-hidden="true"
-            className="ambient-glass-orb-sage absolute top-28 right-[14%] w-[460px] h-[460px] rounded-full"
-          />
-          <div
-            aria-hidden="true"
-            className="ambient-glass-orb-fjord absolute bottom-20 left-[10%] w-[520px] h-[520px] rounded-full"
-          />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="ambient-glass-orb-sage absolute top-28 right-[14%] w-[460px] h-[460px] rounded-full" />
+            <div className="ambient-glass-orb-fjord absolute bottom-20 left-[10%] w-[520px] h-[520px] rounded-full" />
+          </div>
 
-          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2160px] 4xl:max-w-[2400px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-40 pb-20 lg:pb-32">
+          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44 pb-20 lg:pb-32 2xl:pb-40 3xl:pb-48 4xl:pb-56">
             {/* Open Editorial Layout: Generous Breathing Room, Elevated Typography & Borderless Flow */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 lg:gap-20 2xl:gap-28 items-start">
               {/* Left Column: Expanded Manifesto Statement */}
               <div className="lg:col-span-5 space-y-8">
                 <div className="space-y-5">
                   <span className="text-xs font-mono uppercase tracking-[0.25em] text-[var(--accent-ochre)] block">
-                    Manifesto &middot; Arquitetura TÃ©cnica
+                    Origem Real &middot; Da Equipe para a Equipe
                   </span>
 
                   <SplitTextReveal
                     as="h2"
-                    text="Mais que um software: uma arquitetura para o"
-                    highlightText="conhecimento humano."
+                    text="De processos dispersos a uma base"
+                    highlightText="viva e auditável."
                     className="font-editorial text-4xl sm:text-5xl lg:text-[3.5rem] font-normal text-[var(--text-primary)] leading-[1.08] max-w-xl"
                   />
                 </div>
 
                 <div className="space-y-5 text-base sm:text-lg text-[var(--text-secondary)] leading-[1.75] max-w-prose">
                   <p>
-                    A Base de Conhecimento nÃ£o nasceu apenas como um produto comercial. Ela surgiu da
-                    inquietaÃ§Ã£o de seus criadores diante da fragmentaÃ§Ã£o crÃ´nica em SaÃºde e SeguranÃ§a
-                    do Trabalho no Brasil.
+                    A Base SST nasceu dentro de uma equipe operacional de Saúde e
+                    Segurança do Trabalho e eSocial. Antes, fluxos de sistemas, tratativas de
+                    protocolos e regras de eventos eram repassados apenas verbalmente, gerando ruído
+                    de comunicação, respostas divergentes e demora no treinamento de novos colegas.
                   </p>
                   <p className="font-editorial italic text-xl sm:text-2xl text-[var(--text-primary)] leading-relaxed pt-2 border-l-2 border-[var(--accent-ochre)] pl-5 my-4">
-                    &ldquo;Onde normas vitais para a integridade de trabalhadores e a seguranÃ§a
-                    jurÃ­dica de empresas ficavam soterradas em manuais opacos, estruturamos clareza.&rdquo;
+                    &ldquo;Reunimos todo o conhecimento operacional da equipe em um portal único de
+                    consulta rápida, com busca tolerante a erros, leitura focada e ciclo de revisão
+                    a cada 12 meses.&rdquo;
                   </p>
                 </div>
               </div>
@@ -1014,46 +920,40 @@ export const InstitutionalLandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Part B: React Bits <ScrollExpand /> Full-Stage Architectural Media with Hover Footer Caption */}
+          {/* Part B: React Bits <ScrollExpand /> Full-Stage Architectural Media */}
           <div className="relative z-10 w-full">
             <ScrollExpand
               src={ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].src}
               alt={ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].alt}
               title={ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].title}
-              scrollHint="Role para expandir a arquitetura"
-              startWidth={48}
-              startHeight={64}
+              scrollHint="Role para expandir"
+              startWidth={42}
+              startHeight={58}
               startRadius={24}
               endRadius={0}
-              mediaZoom={1.32}
-              scrollDistance={1.15}
+              mediaZoom={1.35}
+              scrollDistance={1.2}
               holdDistance={0.35}
               smoothing={0.1}
-              overlayScrim={0.48}
+              overlayScrim={0.45}
               useWindowScroll
-              footerCaption={{
-                code: ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].code,
-                title: ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].footerLegendTitle,
-                description: ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].footerLegendText,
-                normativeRef: ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].normativeAnchor,
-                technicalSpec: ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].technicalSpec,
-              }}
             >
               <div className="max-w-3xl mx-auto px-6 space-y-5">
                 <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 font-tabular text-[11px] uppercase tracking-[0.2em] text-white/90">
                   <span>{ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].code}</span>
                   <span aria-hidden="true" className="text-[#68B2A0]">
-                    Â·
+                    ·
                   </span>
-                  <span>Arquitetura Documental &amp; Campo</span>
+                  <span>{ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].normativeAnchor}</span>
                 </span>
 
-                <h3 className="font-editorial text-3xl sm:text-5xl 2xl:text-6xl font-normal text-white leading-[1.08] tracking-tight">
+                <h2 className="font-editorial text-3xl sm:text-5xl 2xl:text-6xl font-normal text-white leading-[1.08] tracking-tight">
                   {ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].title}
-                </h3>
+                </h2>
 
-                <p className="text-sm sm:text-base text-white/85 max-w-2xl mx-auto leading-relaxed">
-                  {ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].subtitle}
+                <p className="text-sm sm:text-base text-white/90 max-w-2xl mx-auto leading-relaxed">
+                  {ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].subtitle}{' '}
+                  {ARCHITECTURE_SCROLL_EXPAND_PLATES[archPlateIdx].footerLegendText}
                 </p>
 
                 {/* Interactive Plate Selector inside the Expanded Stage */}
@@ -1071,7 +971,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                             : 'bg-[#0B0F14]/65 hover:bg-[#0B0F14]/85 text-white/80 hover:text-white border border-white/15 backdrop-blur-md'
                         }`}
                       >
-                        {plate.code} Â· {plate.title.split(' ')[0]}
+                        {plate.code} · {plate.title.split(' ')[0]}
                       </button>
                     );
                   })}
@@ -1082,28 +982,24 @@ export const InstitutionalLandingPage: React.FC = () => {
         </section>
 
         {/* ===================================================================== */}
-        {/* SEÃ‡ÃƒO III â€” CADERNO EDITORIAL ABERTO (FROSTED GLASS EDITORIAL SPREAD) */}
+        {/* SEÇÃO III — CADERNO EDITORIAL ABERTO (VIEWERBOX + <ScrollExpand />)   */}
         {/* ===================================================================== */}
         <section
           id="ensaio"
           data-gsap-archetype={SECTION_GSAP_CHOREOGRAPHIES.ensaio.archetype}
-          className="relative border-b border-[var(--border-hairline)] mesh-gradient-tech py-24 lg:py-36 2xl:py-44 3xl:py-52 4xl:py-60 overflow-hidden"
+          className="relative border-b border-[var(--border-hairline)] mesh-gradient-tech pt-24 lg:pt-36 2xl:pt-44 3xl:pt-56 4xl:pt-64"
         >
           {/* Ambient Chromatic Orbs for Frosted Glass Depth */}
-          <div
-            aria-hidden="true"
-            className="ambient-glass-orb-fjord absolute top-16 left-[18%] w-[440px] h-[440px] rounded-full"
-          />
-          <div
-            aria-hidden="true"
-            className="ambient-glass-orb-sage absolute bottom-16 right-[12%] w-[480px] h-[480px] rounded-full"
-          />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="ambient-glass-orb-fjord absolute top-16 left-[18%] w-[440px] h-[440px] rounded-full" />
+            <div className="ambient-glass-orb-sage absolute bottom-16 right-[12%] w-[480px] h-[480px] rounded-full" />
+          </div>
 
-          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2160px] 4xl:max-w-[2400px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-40 space-y-12 lg:space-y-16 2xl:space-y-20">
+          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44 pb-14 lg:pb-20 2xl:pb-28 3xl:pb-36 4xl:pb-44 space-y-12 lg:space-y-16 2xl:space-y-20">
             {/* Practical 4-Essay Direct Navigation Index (Frosted Glass Cards) */}
             <div
               role="tablist"
-              aria-label="Cadernos Editoriais da Base de Conhecimento"
+              aria-label="Cadernos Editoriais da Base SST"
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 2xl:gap-6"
             >
               {GLEAM_ESSAYS.map((essay, idx) => {
@@ -1151,17 +1047,17 @@ export const InstitutionalLandingPage: React.FC = () => {
               })}
             </div>
 
-            {/* 12-Column Frosted Glass Editorial Spread */}
-            <div className="gsap-gleam-essay-content grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 2xl:gap-20 items-start">
-              {/* Left Column: Frosted Glass Editorial Prose & Controls Card (5 Columns) */}
+            {/* 12-Column Editorial Header & Viewerbox Control Panel */}
+            <div className="gsap-gleam-essay-content grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 2xl:gap-20 items-stretch">
+              {/* Left Column: Editorial Prose & Dossier Controls (6 Columns) */}
               <div
                 onMouseMove={handleCardSpotlightMove}
-                className="gsap-gleam-left-col mzia-frame p-7 sm:p-9 2xl:p-11 lg:col-span-5 flex flex-col justify-between space-y-7"
+                className="gsap-gleam-left-col mzia-frame p-7 sm:p-9 2xl:p-11 lg:col-span-6 flex flex-col justify-between space-y-6"
               >
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
                     <span>Por {currentEssay.curator}</span>
-                    <span aria-hidden="true">Â·</span>
+                    <span aria-hidden="true">·</span>
                     <span className="font-tabular text-[var(--text-secondary)]">
                       {currentEssay.dossierCode}
                     </span>
@@ -1178,11 +1074,11 @@ export const InstitutionalLandingPage: React.FC = () => {
 
                 <div className="gsap-gleam-bar w-16 h-[1px] bg-[var(--border-hairline)]" />
 
-                <div className="space-y-5 max-w-prose">
+                <div className="space-y-4 max-w-prose">
                   <p className="text-sm text-[var(--text-secondary)] leading-[1.85]">
                     {currentEssay.excerpt}
                   </p>
-                  <div className="py-4 border-y border-[var(--border-hairline)]">
+                  <div className="py-3.5 border-y border-[var(--border-hairline)]">
                     <p className="font-editorial italic text-xl sm:text-2xl text-[var(--text-primary)] leading-relaxed">
                       &ldquo;{currentEssay.highlight}&rdquo;
                     </p>
@@ -1190,14 +1086,14 @@ export const InstitutionalLandingPage: React.FC = () => {
                 </div>
 
                 {/* Practical Action & Sequential Step Bar */}
-                <div className="pt-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => setActiveDossierCode(currentEssay.dossierCode)}
                     className="min-h-[44px] inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-spectral-gradient text-xs font-medium transition-all whitespace-nowrap cursor-pointer"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
-                    <span>Ler dossiÃª {currentEssay.dossierCode}</span>
+                    <span>Ler dossiê {currentEssay.dossierCode}</span>
                   </button>
 
                   <div className="flex items-center gap-2">
@@ -1215,66 +1111,84 @@ export const InstitutionalLandingPage: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      aria-label="PrÃ³ximo ensaio"
+                      aria-label="Próximo ensaio"
                       onClick={() => {
                         setEssayIndex((prev) => (prev === GLEAM_ESSAYS.length - 1 ? 0 : prev + 1));
                         setEssayPhotoIdx(0);
                       }}
                       className="min-h-[44px] inline-flex items-center gap-1 px-3.5 py-2 rounded-xl glass-interactive-tile text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
                     >
-                      <span>PrÃ³ximo</span>
+                      <span>Próximo</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: Frosted Glass Photographic Showcase + Interactive 3-Plate Filmstrip (7 Columns) */}
-              <div className="gsap-gleam-center-col lg:col-span-7 space-y-4">
+              {/* Right Column: Viewerbox Gallery Index & 3-Plate Selector (6 Columns) */}
+              <div
+                onMouseMove={handleCardSpotlightMove}
+                className="gsap-gleam-center-col mzia-frame p-6 sm:p-8 lg:col-span-6 flex flex-col justify-between space-y-5"
+              >
                 {(() => {
                   const essayPhotos = [
                     currentEssay.mainImg,
                     currentEssay.subImg1,
                     currentEssay.subImg2,
                   ];
-                  const activePhotoSrc = essayPhotos[essayPhotoIdx] ?? currentEssay.mainImg;
                   const activePhotoCaption =
                     currentEssay.plateCaptions[essayPhotoIdx] ?? currentEssay.plateCaptions[0];
+                  const romanNumerals = ['I', 'II', 'III'] as const;
 
                   return (
                     <>
-                      {/* Main Panoramic Plate inside Frosted Glass Shell */}
-                      <div
-                        onMouseMove={handleCardSpotlightMove}
-                        className="mzia-frame p-3 sm:p-4"
-                      >
-                        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-[var(--border-hairline)] bg-[#11151A]">
-                          <AnimatePresence mode="wait">
-                            <motion.img
-                              key={activePhotoSrc}
-                              src={activePhotoSrc}
-                              alt={`${currentEssay.title} â€” ${activePhotoCaption}`}
-                              initial={{ opacity: 0.25, scale: 1.02 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0.2 }}
-                              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                              className="w-full h-full object-cover editorial-photo"
-                            />
-                          </AnimatePresence>
-                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <span className="text-[11px] font-tabular uppercase tracking-[0.2em] text-[var(--accent-ochre)] block">
+                            Viewerbox Documental · {currentEssay.dossierCode}
+                          </span>
+                          <h3 className="font-editorial text-2xl sm:text-3xl text-[var(--text-primary)] font-normal">
+                            {activePhotoCaption}
+                          </h3>
+                        </div>
 
-                          {/* Bottom Floating Frosted Overlay Caption */}
-                          <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-[#0B0D10]/70 backdrop-blur-xl border border-white/15 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-white/90">
-                            <span>{activePhotoCaption}</span>
-                            <span className="text-white/70 font-tabular">
-                              Figura {essayPhotoIdx + 1} de 3
-                            </span>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-tabular text-[var(--text-muted)] px-2">
+                            Figura {essayPhotoIdx + 1} de {essayPhotos.length}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="Imagem anterior no viewerbox"
+                            onClick={() =>
+                              setEssayPhotoIdx((prev) =>
+                                prev === 0 ? essayPhotos.length - 1 : prev - 1,
+                              )
+                            }
+                            className="w-9 h-9 rounded-xl inline-flex items-center justify-center bg-[#ECE9E2] dark:bg-white/[0.06] text-[var(--text-primary)] hover:bg-[#1C4E46] hover:text-white transition-colors cursor-pointer"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Próxima imagem no viewerbox"
+                            onClick={() =>
+                              setEssayPhotoIdx((prev) =>
+                                prev === essayPhotos.length - 1 ? 0 : prev + 1,
+                              )
+                            }
+                            className="w-9 h-9 rounded-xl inline-flex items-center justify-center bg-[#ECE9E2] dark:bg-white/[0.06] text-[var(--text-primary)] hover:bg-[#1C4E46] hover:text-white transition-colors cursor-pointer"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
 
-                      {/* Practical 3-Plate Frosted Glass Thumbnail Selector Strip */}
-                      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                      {/* 3-Plate Viewerbox Thumbnail Grid */}
+                      <div
+                        role="group"
+                        aria-label="Galeria de lâminas do Viewerbox"
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-auto"
+                      >
                         {essayPhotos.map((photoSrc, pIdx) => {
                           const isSelected = essayPhotoIdx === pIdx;
                           return (
@@ -1282,40 +1196,50 @@ export const InstitutionalLandingPage: React.FC = () => {
                               key={photoSrc}
                               type="button"
                               data-glass-active={isSelected}
-                              onMouseMove={handleCardSpotlightMove}
                               onClick={() => setEssayPhotoIdx(pIdx)}
                               aria-label={`Visualizar ${currentEssay.plateCaptions[pIdx]}`}
-                              className={`glass-interactive-tile rounded-2xl p-2.5 group text-left space-y-2 transition-all ${
-                                isSelected ? 'opacity-100' : 'opacity-80 hover:opacity-100'
+                              aria-pressed={isSelected}
+                              className={`group rounded-2xl p-2.5 text-left space-y-2.5 transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#1C4E46] text-white shadow-md'
+                                  : 'bg-[#ECE9E2]/80 dark:bg-white/[0.04] hover:bg-[#ECE9E2] dark:hover:bg-white/[0.08] text-[var(--text-primary)]'
                               }`}
                             >
-                              <div
-                                className={`aspect-[16/10] w-full overflow-hidden rounded-xl border transition-colors bg-[#0B1017] ${
-                                  isSelected
-                                    ? 'border-[#68B2A0]'
-                                    : 'border-[var(--border-hairline)] group-hover:border-[#68B2A0]/60'
-                                }`}
-                              >
+                              <div className="aspect-[16/10] w-full overflow-hidden rounded-xl bg-[#141715]">
                                 <img
                                   src={photoSrc}
                                   alt={currentEssay.plateCaptions[pIdx]}
-                                  className="w-full h-full object-cover editorial-photo"
+                                  className="w-full h-full object-cover editorial-photo group-hover:scale-105 transition-transform duration-300"
                                 />
                               </div>
-                              <div className="flex items-center justify-between gap-1 px-1 text-[10px] font-tabular">
-                                <span
-                                  className={`truncate ${
-                                    isSelected
-                                      ? 'text-[var(--text-primary)] font-medium'
-                                      : 'text-[var(--text-secondary)]'
+                              <div className="px-1 space-y-0.5">
+                                <div
+                                  className={`text-[10px] font-tabular uppercase tracking-wider ${
+                                    isSelected ? 'text-[#8CD1BE]' : 'text-[var(--text-muted)]'
+                                  }`}
+                                >
+                                  Lâmina {romanNumerals[pIdx]}
+                                </div>
+                                <div
+                                  className={`text-xs font-medium line-clamp-2 leading-snug ${
+                                    isSelected ? 'text-white' : 'text-[var(--text-primary)]'
                                   }`}
                                 >
                                   {currentEssay.plateCaptions[pIdx]}
-                                </span>
+                                </div>
                               </div>
                             </button>
                           );
                         })}
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-[var(--text-muted)] pt-1">
+                        <span>
+                          Selecione uma das 3 lâminas acima e role a página para expandir o palco
+                        </span>
+                        <span className="font-tabular text-[var(--text-secondary)]">
+                          ScrollExpand · 100% Stage
+                        </span>
                       </div>
                     </>
                   );
@@ -1323,38 +1247,112 @@ export const InstitutionalLandingPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Part B: React Bits <ScrollExpand useWindowScroll /> Full-Stage Viewerbox */}
+          {(() => {
+            const essayPhotos = [
+              currentEssay.mainImg,
+              currentEssay.subImg1,
+              currentEssay.subImg2,
+            ];
+            const activePhotoSrc = essayPhotos[essayPhotoIdx] ?? currentEssay.mainImg;
+            const activePhotoCaption =
+              currentEssay.plateCaptions[essayPhotoIdx] ?? currentEssay.plateCaptions[0];
+            const romanNumerals = ['I', 'II', 'III'] as const;
+
+            return (
+              <div data-testid="ensaio-viewerbox" className="relative z-10 w-full">
+                <ScrollExpand
+                  src={activePhotoSrc}
+                  alt={`${currentEssay.title} — ${activePhotoCaption}`}
+                  title={activePhotoCaption}
+                  scrollHint="Role para expandir"
+                  startWidth={42}
+                  startHeight={58}
+                  startRadius={24}
+                  endRadius={0}
+                  mediaZoom={1.35}
+                  scrollDistance={1.2}
+                  holdDistance={0.35}
+                  smoothing={0.1}
+                  overlayScrim={0.45}
+                  useWindowScroll
+                >
+                  <div className="max-w-3xl mx-auto px-6 space-y-5">
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/10 backdrop-blur-md text-[11px] font-tabular uppercase tracking-[0.2em] text-white/90">
+                      <span>{currentEssay.dossierCode}</span>
+                      <span aria-hidden="true" className="text-[#68B2A0]">
+                        ·
+                      </span>
+                      <span>
+                        Figura {essayPhotoIdx + 1} de {essayPhotos.length}
+                      </span>
+                    </span>
+
+                    <h2>{activePhotoCaption}</h2>
+
+                    <p>{currentEssay.excerpt}</p>
+
+                    {/* Interactive Viewerbox 3-Image Switcher inside the Expanded Stage */}
+                    <div className="pt-3 flex flex-wrap items-center justify-center gap-2.5">
+                      {essayPhotos.map((photoSrc, pIdx) => {
+                        const isSelected = essayPhotoIdx === pIdx;
+                        return (
+                          <button
+                            key={photoSrc}
+                            type="button"
+                            onClick={() => setEssayPhotoIdx(pIdx)}
+                            className={`min-h-[44px] inline-flex items-center gap-2.5 pl-2 pr-4 py-1.5 rounded-lg text-xs font-tabular transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-white text-[#11151A] font-medium shadow-md'
+                                : 'bg-[#0B0F14]/70 hover:bg-[#0B0F14]/90 text-white/85 hover:text-white backdrop-blur-md'
+                            }`}
+                          >
+                            <img
+                              src={photoSrc}
+                              alt={currentEssay.plateCaptions[pIdx]}
+                              className="w-7 h-7 rounded-md object-cover shrink-0"
+                            />
+                            <span>
+                              {romanNumerals[pIdx]} · {currentEssay.plateCaptions[pIdx]}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </ScrollExpand>
+              </div>
+            );
+          })()}
         </section>
 
         {/* ===================================================================== */}
-        {/* SEÃ‡ÃƒO IV â€” OS 4 DOMÃNIOS (<ScrollStack /> FULL-BLEED STAGE BANNERS)   */}
+        {/* SEÇÃO IV — OS 4 DOMÍNIOS (<ScrollStack /> FULL-BLEED STAGE BANNERS)   */}
         {/* ===================================================================== */}
         <section
           id="modulos"
           data-gsap-archetype={SECTION_GSAP_CHOREOGRAPHIES.modulos.archetype}
-          className="relative border-b border-[var(--border-hairline)] mesh-gradient-bento pt-28 lg:pt-40 2xl:pt-48 3xl:pt-56 4xl:pt-64 pb-24 lg:pb-36 overflow-x-clip"
+          className="relative border-b border-[var(--border-hairline)] mesh-gradient-bento pt-28 lg:pt-40 2xl:pt-48 3xl:pt-60 4xl:pt-72 pb-24 lg:pb-36 2xl:pb-48 3xl:pb-56 4xl:pb-64"
         >
           {/* Ambient Chromatic Orbs for Frosted Glass Refraction */}
-          <div
-            aria-hidden="true"
-            className="ambient-glass-orb-sage absolute top-32 left-[8%] w-[520px] h-[520px] rounded-full"
-          />
-          <div
-            aria-hidden="true"
-            className="ambient-glass-orb-fjord absolute top-[45%] right-[10%] w-[540px] h-[540px] rounded-full"
-          />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="ambient-glass-orb-sage absolute top-32 left-[8%] w-[520px] h-[520px] rounded-full" />
+            <div className="ambient-glass-orb-fjord absolute top-[45%] right-[10%] w-[540px] h-[540px] rounded-full" />
+          </div>
 
           {/* Centered Editorial Section Header */}
-          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2160px] 4xl:max-w-[2400px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-40">
+          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44">
             <div className="text-center max-w-3xl mx-auto mb-16 lg:mb-24 2xl:mb-28 space-y-4">
               <SplitTextReveal
                 as="h2"
-                text="Quatro domÃ­nios tÃ©cnicos sob"
+                text="Quatro domínios técnicos sob"
                 highlightText="guarda institucional."
                 className="font-editorial text-4xl sm:text-5xl lg:text-6xl 2xl:text-7xl font-light text-[var(--text-primary)] leading-[1.08]"
               />
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-[1.8] max-w-xl mx-auto">
-                Ao autenticar na plataforma, sua operaÃ§Ã£o acessa matrizes homologadas, schemas XSD e
-                pareceres previdenciÃ¡rios estruturados em quatro pilares.
+                Ao autenticar na plataforma, sua operação acessa matrizes homologadas, schemas XSD e
+                pareceres previdenciários estruturados em quatro pilares.
               </p>
             </div>
           </div>
@@ -1376,7 +1374,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                 <ScrollStackItem key={pilar.roman}>
                   <img
                     src={pilar.imgPrimary}
-                    alt={`${pilar.title} â€” ${pilar.subtitle}`}
+                    alt={`${pilar.title} — ${pilar.subtitle}`}
                     draggable={false}
                     className="scroll-stack-card__media absolute inset-0 w-full h-full object-cover object-center select-none"
                   />
@@ -1392,10 +1390,10 @@ export const InstitutionalLandingPage: React.FC = () => {
                     <div className="max-w-3xl mx-auto space-y-5">
                       <span className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 font-tabular text-[11px] uppercase tracking-[0.2em] text-white/90">
                         <span className="text-[#68B2A0] font-semibold">
-                          DomÃ­nio {pilar.roman}
+                          Domínio {pilar.roman}
                         </span>
                         <span aria-hidden="true" className="text-white/35">
-                          Â·
+                          ·
                         </span>
                         <span>{pilar.subtitle}</span>
                       </span>
@@ -1417,7 +1415,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                               .getElementById('laboratorio-normativo')
                               ?.scrollIntoView({ behavior: 'smooth' });
                           }}
-                          className="min-h-[48px] inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#11151A] hover:bg-[#F4F2ED] text-xs font-medium shadow-lg transition-all cursor-pointer"
+                          className="min-h-[48px] inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#11151A] hover:bg-[#F4F2ED] text-xs font-medium shadow-lg transition-all cursor-pointer"
                         >
                           <span>Explorar {pilar.title}</span>
                           <ArrowUpRight className="w-3.5 h-3.5" />
@@ -1428,11 +1426,11 @@ export const InstitutionalLandingPage: React.FC = () => {
 
                   {/* Clean Bottom Section-End Bar (Seamless, No Top/Bottom Borders) */}
                   <div className="absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-[#080C11]/90 to-transparent px-4 sm:px-8 lg:px-16 2xl:px-24 py-4 sm:py-5">
-                    <div className="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-2 text-[11px] font-tabular text-white/75">
+                    <div className="max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto flex flex-wrap items-center justify-between gap-2 text-[11px] font-tabular text-white/75">
                       <div className="flex items-center gap-2">
                         <span className="text-[#68B2A0]">0{idx + 1} / 04</span>
                         <span aria-hidden="true" className="text-white/30">
-                          Â·
+                          ·
                         </span>
                         <span className="font-editorial italic text-white/85 text-xs">
                           {pilar.memoryLabel}
@@ -1448,32 +1446,32 @@ export const InstitutionalLandingPage: React.FC = () => {
             </ScrollStack>
           </div>
 
-          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2160px] 4xl:max-w-[2400px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-40 py-16 lg:py-24">
+          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44 py-16 lg:py-24 2xl:py-32 3xl:py-40 4xl:py-48">
             {/* CLEAN MODULAR NORMATIVE LABORATORY (No Nested Boxes, Borderless Elegance) */}
             <div id="laboratorio-normativo" className="space-y-10">
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-6 border-b border-[var(--border-hairline)]">
                 <div className="space-y-2 max-w-xl">
                   <span className="text-xs font-mono uppercase tracking-[0.2em] text-[var(--accent-ochre)] block">
-                    Ambiente de SimulaÃ§Ã£o &middot; CÃ³digo eSocial S-1.3
+                    Ambiente de Simulação &middot; Código eSocial S-1.3
                   </span>
                   <h3 className="font-editorial text-3xl sm:text-4xl font-normal text-[var(--text-primary)]">
-                    LaboratÃ³rio de consulta e simulaÃ§Ã£o normativa
+                    Laboratório de consulta e simulação normativa
                   </h3>
                   <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                    Inspecione leiautes XML, compare adicionais de NR-15 e NR-16 ou consulte a jurisprudÃªncia pacificada do STF.
+                    Inspecione leiautes XML, compare adicionais de NR-15 e NR-16 ou consulte a jurisprudência pacificada do STF.
                   </p>
                 </div>
 
                 {/* Modular Pill Tab Switcher */}
                 <div
                   role="tablist"
-                  aria-label="MÃ³dulos do laboratÃ³rio normativo"
+                  aria-label="Módulos do laboratório normativo"
                   className="flex flex-wrap gap-2 shrink-0"
                 >
                   {[
                     { id: 'esocial', label: 'I. Schemas XML' },
                     { id: 'gro', label: 'II. Simulador NR-15 vs NR-16' },
-                    { id: 'ti', label: 'III. DiagnÃ³stico e-CAC' },
+                    { id: 'ti', label: 'III. Diagnóstico e-CAC' },
                     { id: 'juridico', label: 'IV. Tema 555 STF' },
                   ].map((tab) => {
                     const isTabActive = activeLabTab === tab.id;
@@ -1484,7 +1482,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                         role="tab"
                         aria-selected={isTabActive}
                         onClick={() => setActiveLabTab(tab.id as NormativeLabTabId)}
-                        className={`min-h-[44px] px-5 py-2.5 rounded-full text-xs font-mono transition-all cursor-pointer ${
+                        className={`min-h-[44px] px-5 py-2.5 rounded-xl text-xs font-mono transition-all cursor-pointer ${
                           isTabActive
                             ? 'bg-[var(--accent-ochre)] text-white font-medium shadow-sm'
                             : 'border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-ochre)] bg-black/5 dark:bg-white/5'
@@ -1513,7 +1511,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Event Selector as Soft Modular Pills */}
+                      {/* Event Selector as Soft Modular Buttons */}
                       <div className="space-y-2 pt-2">
                         <span className="text-xs text-[var(--text-muted)] block">Selecione o evento:</span>
                         <div
@@ -1529,7 +1527,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                                 type="button"
                                 aria-pressed={isEvtActive}
                                 onClick={() => setSelectedEvent(evt)}
-                                className={`min-h-[44px] px-4 py-2 rounded-full text-xs font-mono transition-all cursor-pointer ${
+                                className={`min-h-[44px] px-4 py-2 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                                   isEvtActive
                                     ? 'bg-[var(--text-primary)] text-[var(--bg-canvas)] font-semibold shadow-sm'
                                     : 'border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-secondary)]'
@@ -1544,7 +1542,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                     </div>
 
                     {/* Clean Code Viewer (No heavy square borders) */}
-                    <div className="lg:col-span-7 min-w-0 rounded-2xl bg-black/35 dark:bg-black/60 border border-[var(--border-hairline)] p-5 sm:p-7 space-y-4 shadow-xl">
+                    <div className="lg:col-span-7 min-w-0 rounded-2xl bg-[#11151A] dark:bg-black/70 border border-[var(--border-hairline)] p-5 sm:p-7 space-y-4 shadow-xl">
                       <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono border-b border-white/10 pb-3.5">
                         <span className="text-[var(--accent-ochre)] font-medium">
                           SCHEMA OFICIAL &middot; {activeEvtData.code}
@@ -1556,7 +1554,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                             onClick={() => {
                               void copyText(activeEvtData.xmlPreview, 'xml');
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 hover:border-[var(--accent-ochre)] text-xs text-slate-300 hover:text-white transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 hover:border-[var(--accent-ochre)] text-xs text-slate-300 hover:text-white transition-colors cursor-pointer"
                           >
                             {copiedXml ? (
                               <>
@@ -1585,7 +1583,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                       <div className="space-y-3">
                         <div className="flex justify-between items-baseline text-sm">
                           <label htmlFor="salary-slider" className="text-[var(--text-secondary)]">
-                            SalÃ¡rio Base do Colaborador:
+                            Salário Base do Colaborador:
                           </label>
                           <strong className="font-editorial text-2xl text-[var(--text-primary)]">
                             R$ {baseSalary.toLocaleString('pt-BR')}
@@ -1611,7 +1609,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                               key={grade}
                               type="button"
                               onClick={() => setInsalGrade(grade)}
-                              className={`min-h-[44px] px-5 py-2 rounded-full text-xs font-mono transition-all cursor-pointer ${
+                              className={`min-h-[44px] px-5 py-2 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                                 insalGrade === grade
                                   ? 'bg-[var(--accent-ochre)] text-white font-semibold shadow-sm'
                                   : 'border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -1645,11 +1643,11 @@ export const InstitutionalLandingPage: React.FC = () => {
                         </div>
                       </div>
                       <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                        Vedada a cumulatividade (CLT Art. 193 &sect; 2&ordm;). OpÃ§Ã£o legalmente recomendada:{' '}
+                        Vedada a cumulatividade (CLT Art. 193 &sect; 2&ordm;). Opção legalmente recomendada:{' '}
                         <strong className="uppercase text-[var(--text-primary)] font-semibold">
                           {additionCalc.recommendedOption}
                         </strong>{' '}
-                        (DiferenÃ§a de R$ {additionCalc.legalDifference.toFixed(2)}/mÃªs ao trabalhador).
+                        (Diferença de R$ {additionCalc.legalDifference.toFixed(2)}/mês ao trabalhador).
                       </p>
                     </div>
                   </div>
@@ -1659,7 +1657,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
                     <div className="lg:col-span-5 space-y-5">
                       <h4 className="font-editorial text-2xl sm:text-3xl text-[var(--text-primary)] leading-snug">
-                        DiagnÃ³stico de Retorno Webservice e-CAC
+                        Diagnóstico de Retorno Webservice e-CAC
                       </h4>
                       <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
                         Inspecione os protocolos de resposta SOAP/HTTPS e tratativas de assinatura
@@ -1671,22 +1669,22 @@ export const InstitutionalLandingPage: React.FC = () => {
                             key={code}
                             type="button"
                             onClick={() => setProtocolCode(code)}
-                            className={`min-h-[44px] px-5 py-2 rounded-full text-xs font-mono transition-all cursor-pointer ${
+                            className={`min-h-[44px] px-5 py-2 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                               protocolCode === code
                                 ? 'bg-[var(--accent-ochre)] text-white font-semibold shadow-sm'
                                 : 'border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                             }`}
                           >
-                            CÃ³digo {code}
+                            Código {code}
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    <div className="lg:col-span-7 p-6 rounded-2xl bg-black/35 dark:bg-black/60 border border-[var(--border-hairline)] text-xs font-mono text-[#EEF2F5] leading-relaxed shadow-lg">
+                    <div className="lg:col-span-7 p-6 rounded-2xl bg-[#11151A] dark:bg-black/70 border border-[var(--border-hairline)] text-xs font-mono text-[#EEF2F5] leading-relaxed shadow-lg">
                       {protocolCode === '200' && (
                         <span className="text-[var(--accent-ochre)]">
-                          [200 OK] Lote processado com sucesso. Protocolo de recepÃ§Ã£o:
+                          [200 OK] Lote processado com sucesso. Protocolo de recepção:
                           1.2.202610.00948123-1
                         </span>
                       )}
@@ -1710,17 +1708,17 @@ export const InstitutionalLandingPage: React.FC = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
                     <div className="lg:col-span-5 space-y-3">
                       <span className="text-xs font-mono uppercase tracking-widest text-[var(--accent-ochre)] block">
-                        STF &middot; RepercussÃ£o Geral (Tema 555)
+                        STF &middot; Repercussão Geral (Tema 555)
                       </span>
                       <h4 className="font-editorial text-2xl sm:text-3xl text-[var(--text-primary)] leading-snug">
-                        ExposiÃ§Ã£o ao RuÃ­do &amp; Aposentadoria Especial
+                        Exposição ao Ruído &amp; Aposentadoria Especial
                       </h4>
                     </div>
-                    <div className="lg:col-span-7 p-6 sm:p-8 rounded-2xl bg-black/20 dark:bg-black/50 border border-[var(--border-hairline)] text-sm sm:text-base text-[var(--text-secondary)] leading-[1.8] font-editorial italic">
-                      &ldquo;Para exposiÃ§Ã£o ao agente fÃ­sico ruÃ­do acima dos limites legais de tolerÃ¢ncia
-                      (85 dB(A) conforme NHO-01 da Fundacentro e NR-15), a simples declaraÃ§Ã£o de
-                      eficÃ¡cia do EPI no PPP EletrÃ´nico nÃ£o descaracteriza o tempo especial para aposentadoria
-                      nem isenta a alÃ­quota adicional do SAT/RAT.&rdquo;
+                    <div className="lg:col-span-7 p-6 sm:p-8 rounded-2xl bg-[var(--bg-paper)] dark:bg-black/50 border border-[var(--border-hairline)] text-sm sm:text-base text-[var(--text-secondary)] leading-[1.8] font-editorial italic">
+                      &ldquo;Para exposição ao agente físico ruído acima dos limites legais de tolerância
+                      (85 dB(A) conforme NHO-01 da Fundacentro e NR-15), a simples declaração de
+                      eficácia do EPI no PPP Eletrônico não descaracteriza o tempo especial para aposentadoria
+                      nem isenta a alíquota adicional do SAT/RAT.&rdquo;
                     </div>
                   </div>
                 )}
@@ -1733,12 +1731,12 @@ export const InstitutionalLandingPage: React.FC = () => {
         </section>
 
         {/* ===================================================================== */}
-        {/* SEÃ‡ÃƒO V â€” ENGENHARIA & MATRIZ DE PESQUISA ("PLURA PART TWO" REF)      */}
+        {/* SEÇÃO V — ENGENHARIA & MATRIZ DE PESQUISA ("PLURA PART TWO" REF)      */}
         {/* ===================================================================== */}
         <section
           id="tecnologia"
           data-gsap-archetype={SECTION_GSAP_CHOREOGRAPHIES.tecnologia.archetype}
-          className="relative border-b border-[var(--border-hairline)] mesh-gradient-tech py-28 lg:py-40 2xl:py-48 3xl:py-56 4xl:py-64 overflow-hidden"
+          className="relative border-b border-[var(--border-hairline)] mesh-gradient-tech py-28 lg:py-40 2xl:py-48 3xl:py-60 4xl:py-72 overflow-hidden"
         >
           {/* Ambient Chromatic Orbs for Frosted Glass Refraction */}
           <div
@@ -1750,21 +1748,21 @@ export const InstitutionalLandingPage: React.FC = () => {
             className="ambient-glass-orb-sage absolute bottom-16 left-[12%] w-[500px] h-[500px] rounded-full"
           />
 
-          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2160px] 4xl:max-w-[2400px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-40">
+          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 2xl:gap-24 items-start relative z-10">
               {/* Left Column: Engineering Thesis & Live Feature Switcher (5 Columns) */}
               <div className="lg:col-span-5 space-y-8">
                 <div className="space-y-3 max-w-prose">
                   <SplitTextReveal
                     as="h2"
-                    text="Velocidade de busca e leitura"
-                    highlightText="sem distraÃ§Ãµes."
+                    text="Recursos reais para a rotina"
+                    highlightText="operacional de SST."
                     className="font-editorial text-4xl sm:text-5xl 2xl:text-6xl font-normal text-[var(--text-primary)] leading-[1.1]"
                   />
                   <p className="text-sm text-[var(--text-secondary)] leading-[1.85]">
-                    Projetamos recursos que respeitam o tempo de quem atua sob responsabilidade
-                    regulatÃ³ria: busca rÃ¡pida por eventos e normas, modo de leitura focado e
-                    dossiÃªs de decisÃ£o.
+                    Desenvolvida sobre Next.js e AuthService dedicado, a plataforma combina catálogo
+                    editorial em Markdown com busca instantânea, ferramentas de estudo individual e
+                    governança colaborativa por perfis de acesso.
                   </p>
                 </div>
 
@@ -1773,18 +1771,18 @@ export const InstitutionalLandingPage: React.FC = () => {
                   {[
                     {
                       id: 'search',
-                      title: '01. Ãndice rÃ¡pido (Ctrl+K)',
-                      desc: 'LocalizaÃ§Ã£o direta de normas, cÃ³digos da Tabela 24 e leiautes do eSocial.',
+                      title: '01. Busca instantânea MiniSearch (Ctrl+K)',
+                      desc: 'Pesquisa tolerante a erros de digitação em todos os 6 módulos (GRO, eSocial, Eventos, Informações, Coletivo e Tecnologia).',
                     },
                     {
                       id: 'zen',
-                      title: '02. Leitura focada e marca-texto',
-                      desc: 'Estudo sem distraÃ§Ãµes, grifos em portarias e sÃ­nteses normativas.',
+                      title: '02. Modo Foco, Fonte Lexend, Grifos & Glossário',
+                      desc: 'Ajuste de tamanho/espaçamento, fonte acessível para dislexia, destaques salvos no navegador, diagramas Mermaid e termos explicados.',
                     },
                     {
                       id: 'collab',
-                      title: '03. RevisÃ£o tÃ©cnica por pares',
-                      desc: 'HistÃ³rico de atualizaÃ§Ãµes legislativas e curadoria contÃ­nua.',
+                      title: '03. Minha Lista, Avaliações, Correções & RBAC',
+                      desc: 'Fila pessoal de leitura, trilhas de onboarding, avaliação de utilidade, sugestão de correção e moderação por Editores e Administradores.',
                     },
                   ].map((tab) => {
                     const isActive = activeFeatureTab === tab.id;
@@ -1815,20 +1813,29 @@ export const InstitutionalLandingPage: React.FC = () => {
                   {activeFeatureTab === 'search' && (
                     <div className="space-y-3">
                       <div className="text-xs font-medium text-[var(--text-primary)]">
-                        Consulta direta ao acervo
+                        Consulta direta ao acervo técnico
                       </div>
                       <p className="text-xs text-[var(--text-secondary)] leading-relaxed max-w-prose">
-                        Pressione <strong className="text-[var(--text-primary)]">Ctrl+K</strong> a
-                        qualquer momento ou clique abaixo para pesquisar por cÃ³digo ou termo.
+                        Pressione <strong className="text-[var(--text-primary)]">Ctrl+K</strong> em
+                        qualquer tela para localizar guias do S-2210, S-2220, S-2240, PGR, LTCAT,
+                        e-CAC ou scripts de atendimento.
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => setCommandPaletteOpen(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium bg-spectral-gradient transition-all"
-                      >
-                        <span>Abrir busca do acervo</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCommandPaletteOpen(true)}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium bg-spectral-gradient transition-all cursor-pointer"
+                        >
+                          <span>Abrir busca rápida (Ctrl+K)</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                        <Link
+                          href="/artigos"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium border border-[var(--border-hairline)] text-[var(--text-primary)] hover:border-[var(--accent-editorial)] transition-all"
+                        >
+                          <span>Ver todos os artigos</span>
+                        </Link>
+                      </div>
                     </div>
                   )}
 
@@ -1836,27 +1843,27 @@ export const InstitutionalLandingPage: React.FC = () => {
                     <div className="space-y-3 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-[var(--text-primary)]">
-                          NR-01.5.4 Â· InventÃ¡rio de Riscos
+                          Leitura Orientada · Grifos Persistidos
                         </span>
                         <button
                           type="button"
                           onClick={() => setHighlightActive((prev) => !prev)}
-                          className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline"
+                          className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline cursor-pointer"
                         >
                           <Highlighter className="w-3 h-3" />
                           <span>{highlightActive ? 'Remover grifo' : 'Aplicar grifo'}</span>
                         </button>
                       </div>
                       <p className="text-[var(--text-secondary)] leading-relaxed max-w-prose">
-                        A organizaÃ§Ã£o deve manter o InventÃ¡rio de Riscos atualizado e{' '}
+                        Em cada artigo você pode ativar o Modo Foco, alternar para a fonte Lexend e{' '}
                         <span
                           className={
                             highlightActive
-                              ? 'bg-[#234F46]/15 text-[var(--text-primary)] px-1 rounded border-b border-[var(--accent-editorial)]'
+                              ? 'bg-[#234F46]/20 dark:bg-[#68B2A0]/25 text-[var(--text-primary)] px-1 rounded border-b border-[var(--accent-editorial)]'
                               : ''
                           }
                         >
-                          garantir coerÃªncia estrita entre o PGR, o LTCAT e o evento S-2240
+                          grifar trechos importantes que ficam salvos automaticamente no seu navegador
                         </span>
                         .
                       </p>
@@ -1864,15 +1871,29 @@ export const InstitutionalLandingPage: React.FC = () => {
                   )}
 
                   {activeFeatureTab === 'collab' && (
-                    <div className="space-y-2 text-xs">
+                    <div className="space-y-2.5 text-xs">
                       <div className="font-medium text-[var(--text-primary)]">
-                        AtualizaÃ§Ã£o normativa Â· Portaria MTE 612/2024
+                        Ciclo de Revisão de 12 Meses &amp; Interações Autenticadas
                       </div>
-                      <div className="text-[var(--text-muted)] line-through">
-                        Janela toxicolÃ³gica de 60 dias (S-2221)
-                      </div>
-                      <div className="text-[var(--text-primary)]">
-                        Janela mÃ­nima de 90 dias consolidada no acervo tÃ©cnico.
+                      <p className="text-[var(--text-secondary)] leading-relaxed">
+                        Leitores autenticados avaliam se o artigo ajudou, enviam sugestões de
+                        correção e organizam trilhas em <strong>Minha Lista</strong> (`/minha-lista`),
+                        enquanto Editores e Administradores moderam o acervo em `/admin`.
+                      </p>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <Link
+                          href="/minha-lista"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-spectral-gradient text-white"
+                        >
+                          <span>Acessar Minha Lista</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </Link>
+                        <Link
+                          href="/sobre"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border-hairline)] text-[var(--text-primary)]"
+                        >
+                          <span>Conhecer a Arquitetura</span>
+                        </Link>
                       </div>
                     </div>
                   )}
@@ -1882,7 +1903,7 @@ export const InstitutionalLandingPage: React.FC = () => {
               {/* Right Column: 12-Tile Frosted Glass Research Matrix */}
               <div className="lg:col-span-7 space-y-6">
                 <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] border-b border-[var(--border-hairline)] pb-3">
-                  <span>Ãndice de dossiÃªs normativos (12 domÃ­nios)</span>
+                  <span>Índice de dossiês normativos (12 domínios)</span>
                   <span className="text-[var(--text-muted)]">Selecione um tema para leitura</span>
                 </div>
 
@@ -1892,9 +1913,14 @@ export const InstitutionalLandingPage: React.FC = () => {
                       key={tile.code}
                       type="button"
                       data-testid={`matrix-tile-${tile.code}`}
+                      aria-label={`Abrir dossiê normativo ${tile.code}: ${tile.label} (${tile.domain})`}
+                      aria-haspopup="dialog"
                       onMouseMove={handleCardSpotlightMove}
-                      onClick={() => setActiveDossierCode(tile.code)}
-                      className="gsap-research-tile glass-interactive-tile group text-left aspect-square p-4 2xl:p-5 flex flex-col justify-between transition-all"
+                      onClick={() => {
+                        AnalyticsService.trackEvent('dossier_opened', { code: tile.code });
+                        setActiveDossierCode(tile.code);
+                      }}
+                      className="gsap-research-tile glass-interactive-tile group text-left aspect-square p-4 2xl:p-5 flex flex-col justify-between transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-editorial)]"
                     >
                       <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
                         <span className="font-tabular">{String(idx + 1).padStart(2, '0')}</span>
@@ -1920,12 +1946,12 @@ export const InstitutionalLandingPage: React.FC = () => {
         </section>
 
         {/* ===================================================================== */}
-        {/* SEÃ‡ÃƒO VI â€” SOBRE & OS CRIADORES ("ETIENNE" PANORAMIC WALKING LAYOUT)  */}
+        {/* SEÇÃO VI — SOBRE & OS CRIADORES ("ETIENNE" PANORAMIC WALKING LAYOUT)  */}
         {/* ===================================================================== */}
         <section
           id="criadores"
           data-gsap-archetype={SECTION_GSAP_CHOREOGRAPHIES.criadores.archetype}
-          className="relative border-b border-[var(--border-hairline)] mesh-gradient-authority py-24 lg:py-36 2xl:py-44 3xl:py-52 4xl:py-60 overflow-hidden"
+          className="relative border-b border-[var(--border-hairline)] mesh-gradient-authority py-24 lg:py-36 2xl:py-44 3xl:py-56 4xl:py-68 overflow-hidden"
         >
           {/* Ambient Chromatic Orbs for Frosted Glass Depth */}
           <div
@@ -1937,52 +1963,41 @@ export const InstitutionalLandingPage: React.FC = () => {
             className="ambient-glass-orb-fjord absolute bottom-12 right-[15%] w-[480px] h-[480px] rounded-full"
           />
 
-          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2160px] 4xl:max-w-[2400px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-40 space-y-12 2xl:space-y-16">
+          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44 space-y-12 2xl:space-y-16 3xl:space-y-20">
             {/* Top Minimal Header Bar (Etienne Style) */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2">
               <div className="space-y-1.5">
+                <span className="text-xs font-mono uppercase tracking-[0.22em] text-[var(--accent-ochre)] block">
+                  Idealizadores &amp; Consultoria Técnica
+                </span>
                 <SplitTextReveal
                   as="h2"
-                  text="A caminhada por trÃ¡s da"
-                  highlightText="Base de Conhecimento."
+                  text="As pessoas por trás da"
+                  highlightText="Base SST."
                   className="font-editorial italic text-3xl sm:text-4xl 2xl:text-5xl font-normal text-[var(--text-primary)]"
                 />
               </div>
 
-              {/* Optional Personal Photo Switcher so Guilherme & Victor can insert their photo */}
-              <div className="flex flex-col sm:items-end gap-2">
-                <div className="flex items-center gap-3">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/avif"
-                    aria-label="Selecionar fotografia dos criadores Guilherme e Victor"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onMouseMove={handleCardSpotlightMove}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="glass-interactive-tile rounded-xl inline-flex items-center gap-2 px-4 py-2.5 text-[11px] font-tabular uppercase tracking-[0.18em] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
-                  >
-                    <Camera className="w-3.5 h-3.5 text-[#68B2A0]" />
-                    <span>Substituir Foto (Guilherme &amp; Victor)</span>
-                  </button>
-                </div>
-                {photoUploadError && (
-                  <p role="alert" className="text-xs text-[#7AA6C7]">
-                    {photoUploadError}
-                  </p>
-                )}
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="/sobre"
+                  className="glass-interactive-tile rounded-xl inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--text-primary)] hover:text-[var(--accent-editorial)] transition-all"
+                >
+                  <span>Ler História Completa do Projeto (/sobre)</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-[var(--accent-editorial)]" />
+                </Link>
               </div>
             </div>
 
-            {/* Pure Clean Panoramic Photo (No Heavy Outer Square Frame) */}
-            <div className="gsap-etienne-frame relative w-full aspect-[16/9] sm:aspect-[21/9] min-h-[320px] sm:min-h-[440px] 2xl:min-h-[520px] overflow-hidden rounded-2xl shadow-xl group">
+            {/* Pure Clean Panoramic Photo */}
+            <div className="gsap-etienne-frame relative w-full aspect-[16/9] sm:aspect-[21/9] min-h-[300px] sm:min-h-[420px] 2xl:min-h-[500px] overflow-hidden rounded-2xl shadow-xl group">
               <img
                 src={creatorsWalkPhoto}
-                alt="Guilherme e Victor â€” Criadores da Base de Conhecimento"
+                alt="Equipe e Arquitetura da Base SST"
+                width={1920}
+                height={820}
+                loading="lazy"
+                decoding="async"
                 className="gsap-etienne-photo w-full h-full object-cover grayscale contrast-105 brightness-95"
               />
 
@@ -1993,98 +2008,136 @@ export const InstitutionalLandingPage: React.FC = () => {
               />
 
               {/* Clean Editorial Caption in Bottom-Left */}
-              <div className="absolute bottom-5 left-5 sm:left-7 rounded-full bg-[#0B0D10]/65 backdrop-blur-xl border border-white/10 px-4 py-2 flex items-center gap-2.5 text-xs text-white/90">
-                <span className="font-medium">Guilherme &amp; Victor</span>
+              <div className="absolute bottom-5 left-5 sm:left-7 rounded-xl bg-[#0B0D10]/70 backdrop-blur-xl border border-white/10 px-4 py-2 flex flex-wrap items-center gap-2 text-xs text-white/90">
+                <span className="font-medium">Victor Cardoso &amp; Guilherme Cruz</span>
                 <span aria-hidden="true" className="text-white/40">
-                  Â·
+                  ·
                 </span>
-                <span className="text-white/75">Idealizadores da Base de Conhecimento</span>
+                <span className="text-white/75">
+                  Consultoria Técnica: Sabrina Fraguela &amp; João Sanchez
+                </span>
               </div>
             </div>
 
             {/* 4-Column Frosted Glass Signature Cards Directly Below the Photo */}
             <div className="gsap-etienne-strip grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 2xl:gap-7">
-              {/* Card 1: Brand & Essence */}
+              {/* Card 1: Victor Cardoso */}
               <div
                 onMouseMove={handleCardSpotlightMove}
-                className="gsap-etienne-col mzia-frame rounded-2xl p-7 2xl:p-8 space-y-2.5"
+                className="gsap-etienne-col mzia-frame rounded-2xl p-7 2xl:p-8 flex flex-col justify-between space-y-3"
               >
-                <h3 className="font-editorial text-2xl sm:text-3xl font-normal text-[var(--text-primary)]">
-                  Base de Conhecimento
-                </h3>
-                <p className="text-[11px] font-tabular uppercase tracking-[0.16em] text-[#68B2A0]">
-                  Idealizado por Guilherme &amp; Victor
-                </p>
-                <p className="text-xs text-[var(--text-secondary)] leading-[1.75] pt-1 max-w-prose">
-                  Concebido nÃ£o apenas como um sistema comercial, mas como um acervo vivo de clareza
-                  normativa e proteÃ§Ã£o Ã  vida no trabalho.
-                </p>
-              </div>
-
-              {/* Card 2: Guilherme */}
-              <div
-                onMouseMove={handleCardSpotlightMove}
-                className="gsap-etienne-col mzia-frame rounded-2xl p-7 2xl:p-8 space-y-2.5"
-              >
-                <h3 className="font-editorial text-2xl sm:text-3xl font-normal text-[var(--text-primary)]">
-                  Guilherme
-                </h3>
-                <p className="text-[11px] font-tabular uppercase tracking-[0.16em] text-[#68B2A0]">
-                  Co-Criador Â· Arquitetura &amp; SST
-                </p>
-                <p className="text-xs text-[var(--text-secondary)] leading-[1.75] pt-1 max-w-prose">
-                  Engenharia de sistemas, mensageria XML/e-CAC, governanÃ§a operacional e
-                  estruturaÃ§Ã£o das trilhas normativas do eSocial.
-                </p>
-              </div>
-
-              {/* Card 3: Victor */}
-              <div
-                onMouseMove={handleCardSpotlightMove}
-                className="gsap-etienne-col mzia-frame rounded-2xl p-7 2xl:p-8 space-y-2.5"
-              >
-                <h3 className="font-editorial text-2xl sm:text-3xl font-normal text-[var(--text-primary)]">
-                  Victor
-                </h3>
-                <p className="text-[11px] font-tabular uppercase tracking-[0.16em] text-[#7AA6C7]">
-                  Co-Criador Â· DireÃ§Ã£o Criativa &amp; UI
-                </p>
-                <p className="text-xs text-[var(--text-secondary)] leading-[1.75] pt-1 max-w-prose">
-                  DireÃ§Ã£o de arte editorial, engenharia de interface, sistemas de busca instantÃ¢nea
-                  e experiÃªncia de leitura silenciosa.
-                </p>
-              </div>
-
-              {/* Card 4: Philosophy & Direct Dialogue */}
-              <div
-                onMouseMove={handleCardSpotlightMove}
-                className="gsap-etienne-col mzia-frame rounded-2xl p-7 2xl:p-8 space-y-2.5"
-              >
-                <h3 className="font-editorial text-2xl sm:text-3xl font-normal text-[var(--text-primary)]">
-                  Nossa Ideia
-                </h3>
-                <p className="text-[11px] font-tabular uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                  Rigor TÃ©cnico Â· SilÃªncio Visual
-                </p>
-                <div className="pt-1 space-y-2 max-w-prose">
-                  <p className="text-xs text-[var(--text-secondary)] leading-[1.75]">
-                    Unir a precisÃ£o jurÃ­dica e previdenciÃ¡ria Ã  serenidade de uma galeria editorial.
+                <div className="space-y-2">
+                  <h3 className="font-editorial text-2xl sm:text-3xl font-normal text-[var(--text-primary)]">
+                    Victor Cardoso
+                  </h3>
+                  <p className="text-[11px] font-tabular uppercase tracking-[0.16em] text-[var(--accent-editorial)]">
+                    Idealizador e Arquiteto
                   </p>
-                  <a
-                    href="#sobre"
-                    className="inline-flex items-center gap-1.5 text-[11px] font-tabular uppercase tracking-[0.18em] text-[#68B2A0] hover:underline"
-                  >
-                    <span>Dialogar com os Criadores</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </a>
+                  <p className="text-xs text-[var(--text-secondary)] leading-[1.75] pt-1 max-w-prose">
+                    Iniciou a documentação dos fluxos de trabalho da equipe que deu origem à base.
+                    Responsável pela arquitetura front-end, pelo design da interface e pelos
+                    recursos de leitura (catálogo, modo foco, ajustes tipográficos e grifos).
+                  </p>
                 </div>
+                <a
+                  href="https://victor-cardoso.vercel.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-tabular uppercase tracking-[0.16em] text-[var(--accent-editorial)] hover:underline pt-2"
+                >
+                  <span>Portfólio &amp; Contato</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+
+              {/* Card 2: Guilherme Cruz */}
+              <div
+                onMouseMove={handleCardSpotlightMove}
+                className="gsap-etienne-col mzia-frame rounded-2xl p-7 2xl:p-8 flex flex-col justify-between space-y-3"
+              >
+                <div className="space-y-2">
+                  <h3 className="font-editorial text-2xl sm:text-3xl font-normal text-[var(--text-primary)]">
+                    Guilherme Cruz
+                  </h3>
+                  <p className="text-[11px] font-tabular uppercase tracking-[0.16em] text-[var(--accent-editorial)]">
+                    Idealizador e Desenvolvedor
+                  </p>
+                  <p className="text-xs text-[var(--text-secondary)] leading-[1.75] pt-1 max-w-prose">
+                    Coidealizador do projeto, atua na concepção e engenharia de software da
+                    plataforma. Desenvolveu o AuthService: autenticação, recuperação de senha,
+                    login social, perfis RBAC, avaliações, correções e moderação.
+                  </p>
+                </div>
+                <a
+                  href="https://gcruz.dev.br/links"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-tabular uppercase tracking-[0.16em] text-[var(--accent-editorial)] hover:underline pt-2"
+                >
+                  <span>Links &amp; GitHub</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+
+              {/* Card 3: Sabrina Fraguela */}
+              <div
+                onMouseMove={handleCardSpotlightMove}
+                className="gsap-etienne-col mzia-frame rounded-2xl p-7 2xl:p-8 flex flex-col justify-between space-y-3"
+              >
+                <div className="space-y-2">
+                  <h3 className="font-editorial text-2xl sm:text-3xl font-normal text-[var(--text-primary)]">
+                    Sabrina Fraguela
+                  </h3>
+                  <p className="text-[11px] font-tabular uppercase tracking-[0.16em] text-[var(--accent-ochre)]">
+                    Consultoria Técnica
+                  </p>
+                  <p className="text-xs text-[var(--text-secondary)] leading-[1.75] pt-1 max-w-prose">
+                    Curadoria e revisão do conteúdo operacional publicado na plataforma, garantindo
+                    aderência prática aos fluxos de Saúde e Segurança do Trabalho, eSocial e rotinas
+                    de atendimento da equipe.
+                  </p>
+                </div>
+                <Link
+                  href="/sobre"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-tabular uppercase tracking-[0.16em] text-[var(--text-secondary)] hover:text-[var(--text-primary)] pt-2"
+                >
+                  <span>Ver governança editorial</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              {/* Card 4: João Sanchez */}
+              <div
+                onMouseMove={handleCardSpotlightMove}
+                className="gsap-etienne-col mzia-frame rounded-2xl p-7 2xl:p-8 flex flex-col justify-between space-y-3"
+              >
+                <div className="space-y-2">
+                  <h3 className="font-editorial text-2xl sm:text-3xl font-normal text-[var(--text-primary)]">
+                    João Sanchez
+                  </h3>
+                  <p className="text-[11px] font-tabular uppercase tracking-[0.16em] text-[var(--accent-ochre)]">
+                    Consultoria Técnica
+                  </p>
+                  <p className="text-xs text-[var(--text-secondary)] leading-[1.75] pt-1 max-w-prose">
+                    Revisão e organização do material técnico, apoiando na precisão dos fluxos
+                    operacionais, conferência de prazos normativos, procedimentos de mensageria e
+                    padronização documental.
+                  </p>
+                </div>
+                <Link
+                  href="/artigos"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-tabular uppercase tracking-[0.16em] text-[var(--text-secondary)] hover:text-[var(--text-primary)] pt-2"
+                >
+                  <span>Explorar artigos revisados</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             </div>
           </div>
         </section>
 
         {/* ===================================================================== */}
-        {/* SEÃ‡ÃƒO PERGUNTAS FREQUENTES â€” ACORDEÃƒO EDITORIAL SST & ESOCIAL          */}
+        {/* SEÇÃO PERGUNTAS FREQUENTES — ACORDEÃO EDITORIAL SST & ESOCIAL          */}
         {/* ===================================================================== */}
         <FaqAccordionSection
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
@@ -2092,12 +2145,12 @@ export const InstitutionalLandingPage: React.FC = () => {
         />
 
         {/* ===================================================================== */}
-        {/* SEÃ‡ÃƒO VII â€” CREDENCIAMENTO & DIÃLOGO INSTITUCIONAL                    */}
+        {/* SEÇÃO VII — ACESSO, CONTAS & PARTICIPAÇÃO NA PLATAFORMA               */}
         {/* ===================================================================== */}
         <section
           id="sobre"
           data-gsap-archetype={SECTION_GSAP_CHOREOGRAPHIES.sobre.archetype}
-          className="relative border-b border-[var(--border-hairline)] mesh-gradient-authority py-28 lg:py-36 2xl:py-44 3xl:py-52 4xl:py-60 overflow-hidden"
+          className="relative border-b border-[var(--border-hairline)] mesh-gradient-authority py-28 lg:py-36 2xl:py-44 3xl:py-56 4xl:py-68 overflow-hidden"
         >
           {/* Ambient Chromatic Orbs for Frosted Glass Depth */}
           <div
@@ -2109,21 +2162,21 @@ export const InstitutionalLandingPage: React.FC = () => {
             className="ambient-glass-orb-fjord absolute bottom-16 right-[12%] w-[520px] h-[520px] rounded-full"
           />
 
-          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2160px] 4xl:max-w-[2400px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-40">
+          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 lg:gap-20 2xl:gap-28 items-start">
               {/* Left Column */}
               <div className="gsap-sobre-left lg:col-span-5 space-y-6">
                 <SplitTextReveal
                   as="h2"
-                  text="Inicie um diÃ¡logo ou solicite seu"
-                  highlightText="credenciamento."
+                  text="Participe da evolução da"
+                  highlightText="Base SST."
                   className="font-editorial text-4xl sm:text-5xl 2xl:text-6xl font-normal text-[var(--text-primary)] leading-[1.1]"
                 />
 
                 <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-[1.85] max-w-prose">
-                  Seja para integrar sua equipe de engenharia e medicina ocupacional ao nosso acervo
-                  privado, seja para trocar experiÃªncias sobre arquitetura normativa com Guilherme e
-                  Victor.
+                  O catálogo de artigos é aberto para consulta imediata da equipe. Ao criar sua
+                  conta na plataforma, você desbloqueia interações técnicas, histórico de sessões e
+                  pode solicitar perfil de Editor para colaborar na escrita e revisão dos guias.
                 </p>
 
                 <div
@@ -2132,20 +2185,38 @@ export const InstitutionalLandingPage: React.FC = () => {
                 >
                   <div>
                     <strong className="text-[var(--text-primary)] font-medium">
-                      Sigilo Documental:
+                      Perfil Leitor (/cadastro):
                     </strong>{' '}
-                    Artigos internos e matrizes operacionais exigem autenticaÃ§Ã£o verificada.
+                    Avalie se os artigos ajudaram, envie sugestões de correção e comente nos
+                    procedimentos.
                   </div>
                   <div>
                     <strong className="text-[var(--text-primary)] font-medium">
-                      Base Legal Atualizada:
+                      Perfil Editor &amp; Administrador (/admin):
                     </strong>{' '}
-                    Portaria MTP nÂº 671, Decreto nÂº 10.410 e Leiaute eSocial S-1.3.
+                    Publique e atualize artigos em Markdown, revise sugestões da equipe e modere
+                    comentários.
                   </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <Link
+                    href="/cadastro"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-semibold bg-[var(--accent-editorial)] text-white hover:opacity-95 shadow-sm transition-all"
+                  >
+                    <span>Criar Conta Agora</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-medium glass-interactive-tile text-[var(--text-primary)]"
+                  >
+                    <span>Entrar na Plataforma</span>
+                  </Link>
                 </div>
               </div>
 
-              {/* Right Column: Frosted Glass Credentialing Form Card */}
+              {/* Right Column: Frosted Glass Contact / Editor Request Form Card */}
               <div
                 onMouseMove={handleCardSpotlightMove}
                 className="gsap-sobre-right lg:col-span-7 mzia-frame rounded-3xl p-8 sm:p-12 2xl:p-16"
@@ -2154,13 +2225,13 @@ export const InstitutionalLandingPage: React.FC = () => {
                   <SplitTextReveal
                     as="h3"
                     charStagger={0.012}
-                    text="Solicitar Credenciamento"
-                    highlightText="Institucional"
+                    text="Contato Técnico &"
+                    highlightText="Credenciamento"
                     className="font-editorial text-3xl sm:text-4xl font-normal text-[var(--text-primary)]"
                   />
                   <p className="text-xs text-[var(--text-secondary)] max-w-prose">
-                    Preencha os dados abaixo para liberar o acesso da sua organizaÃ§Ã£o ou agendar uma
-                    conversa tÃ©cnica.
+                    Deseja implantar a Base SST na sua equipe de SST ou falar com os
+                    idealizadores? Envie uma mensagem abaixo ou acesse diretamente a tela de cadastro.
                   </p>
                 </div>
 
@@ -2168,16 +2239,36 @@ export const InstitutionalLandingPage: React.FC = () => {
                   <div
                     role="status"
                     aria-live="polite"
-                    className="p-8 rounded-2xl atelier-glass space-y-3 text-center"
+                    className="p-8 rounded-2xl atelier-glass space-y-4 text-center"
                   >
                     <CheckCircle2 className="w-8 h-8 text-[#68B2A0] mx-auto" />
                     <h4 className="font-editorial text-2xl text-[var(--text-primary)]">
-                      SolicitaÃ§Ã£o Recebida por Guilherme &amp; Victor
+                      Dados validados para credenciamento imediato
                     </h4>
                     <p className="text-xs text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
-                      Enviamos as credenciais de acesso e instruÃ§Ãµes para{' '}
-                      <strong>{contactEmail}</strong> ({contactCompany}).
+                      Registramos o contato de <strong>{contactName}</strong> (<strong>{contactEmail}</strong> · {contactCompany}). Finalize sua conta agora com seus dados já preenchidos:
                     </p>
+                    <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                      <Link
+                        href={prefilledRegisterHref}
+                        onClick={() =>
+                          AnalyticsService.trackEvent('cta_register_clicked', {
+                            source: 'lead_form_prefill',
+                          })
+                        }
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-semibold bg-[var(--accent-editorial)] text-white hover:opacity-95 shadow-md transition-all"
+                      >
+                        <span>Concluir Cadastro com Dados Preenchidos</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setContactSubmitted(false)}
+                        className="px-4 py-2.5 rounded-xl text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline underline-offset-4 cursor-pointer"
+                      >
+                        Editar dados informados
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleContactSubmit} noValidate className="space-y-6">
@@ -2206,7 +2297,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                         value={contactName}
                         onChange={(e) => setContactName(e.target.value)}
                         placeholder="Eng. Roberto Almeida"
-                        className="w-full min-h-[44px] py-3 text-base sm:text-sm text-[var(--text-primary)] bg-transparent focus:outline-none transition-colors"
+                        className="w-full min-h-[44px] py-3 text-base sm:text-sm text-[var(--text-primary)] bg-transparent focus:outline-none focus-visible:border-b focus-visible:border-[var(--accent-editorial)] transition-colors"
                       />
                       <div className="gsap-blueprint-line h-[1px] w-full bg-[var(--border-hairline)]" />
                     </div>
@@ -2216,7 +2307,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                         htmlFor="lead-email"
                         className="block text-[10px] font-tabular uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2"
                       >
-                        E-mail Corporativo ou AcadÃªmico
+                        E-mail Corporativo ou Acadêmico
                       </label>
                       <input
                         id="lead-email"
@@ -2227,7 +2318,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                         value={contactEmail}
                         onChange={(e) => setContactEmail(e.target.value)}
                         placeholder="roberto.almeida@instituicao.com.br"
-                        className="w-full min-h-[44px] py-3 text-base sm:text-sm text-[var(--text-primary)] bg-transparent focus:outline-none transition-colors"
+                        className="w-full min-h-[44px] py-3 text-base sm:text-sm text-[var(--text-primary)] bg-transparent focus:outline-none focus-visible:border-b focus-visible:border-[var(--accent-editorial)] transition-colors"
                       />
                       <div className="gsap-blueprint-line h-[1px] w-full bg-[var(--border-hairline)]" />
                     </div>
@@ -2237,7 +2328,7 @@ export const InstitutionalLandingPage: React.FC = () => {
                         htmlFor="lead-company"
                         className="block text-[10px] font-tabular uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2"
                       >
-                        OrganizaÃ§Ã£o, Consultoria ou Ãrea de AtuaÃ§Ã£o
+                        Equipe, Consultoria ou Área de Atuação
                       </label>
                       <input
                         id="lead-company"
@@ -2246,8 +2337,8 @@ export const InstitutionalLandingPage: React.FC = () => {
                         maxLength={140}
                         value={contactCompany}
                         onChange={(e) => setContactCompany(e.target.value)}
-                        placeholder="Engenharia de SeguranÃ§a & SaÃºde Ocupacional"
-                        className="w-full min-h-[44px] py-3 text-base sm:text-sm text-[var(--text-primary)] bg-transparent focus:outline-none transition-colors"
+                        placeholder="Operações SST & Mensageria eSocial"
+                        className="w-full min-h-[44px] py-3 text-base sm:text-sm text-[var(--text-primary)] bg-transparent focus:outline-none focus-visible:border-b focus-visible:border-[var(--accent-editorial)] transition-colors"
                       />
                       <div className="gsap-blueprint-line h-[1px] w-full bg-[var(--border-hairline)]" />
                     </div>
@@ -2258,14 +2349,14 @@ export const InstitutionalLandingPage: React.FC = () => {
                           type="submit"
                           className="w-full sm:w-auto min-h-[48px] inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl text-xs uppercase tracking-[0.16em] font-medium text-white bg-spectral-gradient hover:opacity-95 shadow-lg transition-all cursor-pointer"
                         >
-                          <span>Enviar SolicitaÃ§Ã£o</span>
+                          <span>Enviar Mensagem</span>
                           <Send className="w-3.5 h-3.5" />
                         </button>
                       </MagneticWrapper>
 
                       <Link
-                        href="/cadastro"
-                        className="min-h-[44px] inline-flex items-center text-xs text-[var(--text-secondary)] hover:text-[#68B2A0] underline underline-offset-4 cursor-pointer"
+                        href={prefilledRegisterHref}
+                        className="min-h-[44px] inline-flex items-center text-xs text-[var(--text-secondary)] hover:text-[var(--accent-editorial)] underline underline-offset-4 cursor-pointer"
                       >
                         Ou criar conta imediatamente (/cadastro)
                       </Link>
@@ -2278,7 +2369,7 @@ export const InstitutionalLandingPage: React.FC = () => {
         </section>
 
         {/* ===================================================================== */}
-        {/* RODAPÃ‰ EDITORIAL MINIMALISTA E INSTITUCIONAL                          */}
+        {/* RODAPÉ EDITORIAL MINIMALISTA E INSTITUCIONAL                          */}
         {/* ===================================================================== */}
         <InstitutionalFooter
           onOpenLogin={handleOpenLogin}
@@ -2303,13 +2394,6 @@ export const InstitutionalLandingPage: React.FC = () => {
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
         onOpenRegister={handleOpenRegister}
-      />
-
-      <AuthModal
-        isOpen={authModalOpen}
-        initialMode={authMode}
-        onClose={() => setAuthModalOpen(false)}
-        onSuccess={(email) => setAuthBannerEmail(email)}
       />
     </div>
   );

@@ -30,9 +30,10 @@ function getInitialConsent(): ConsentStatus {
 export const ConsentProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [consent, setConsent] = useState<ConsentStatus>(getInitialConsent);
+  const [consent, setConsent] = useState<ConsentStatus>('pending');
 
   useEffect(() => {
+    setConsent(getInitialConsent());
     // Dados de recursos desativados: não ficam guardados sem uso (minimização)
     for (const key of RETIRED_KEYS) safeStorage.removeItem(key);
   }, []);

@@ -1,11 +1,16 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import {
-  clampScrollExpand,
-  smoothstepScrollExpand,
-} from '../utils/sstCalculations';
+
+import './ScrollExpand.css';
+
+const clamp = (v: number, a: number, b: number): number => (v < a ? a : v > b ? b : v);
+
+const smoothstep = (edge0: number, edge1: number, x: number): number => {
+  const t = clamp((x - edge0) / (edge1 - edge0 || 1e-6), 0, 1);
+  return t * t * (3 - 2 * t);
+};
 
 type ConfigKey =
   | 'startWidth'
@@ -19,14 +24,6 @@ type ConfigKey =
   | 'overlayScrim'
   | 'useWindowScroll'
   | 'enabled';
-
-export interface ScrollExpandFooterCaption {
-  code?: string;
-  title: string;
-  description: string;
-  normativeRef?: string;
-  technicalSpec?: string;
-}
 
 export interface ScrollExpandProps {
   src?: string;
@@ -46,10 +43,10 @@ export interface ScrollExpandProps {
   overlayScrim?: number;
   useWindowScroll?: boolean;
   enabled?: boolean;
-  footerCaption?: ScrollExpandFooterCaption;
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
+  [key: string]: unknown;
 }
 
 const ScrollExpand: React.FC<ScrollExpandProps> = ({
@@ -58,7 +55,7 @@ const ScrollExpand: React.FC<ScrollExpandProps> = ({
   poster = '',
   alt = '',
   title = '',
-  scrollHint = 'Role para expandir',
+  scrollHint = '',
   startWidth = 42,
   startHeight = 58,
   startRadius = 24,
@@ -66,25 +63,26 @@ const ScrollExpand: React.FC<ScrollExpandProps> = ({
   mediaZoom = 1.35,
   scrollDistance = 1.2,
   holdDistance = 0.35,
-  smoothing = 0.08,
+  smoothing = 0.1,
   overlayScrim = 0.45,
   useWindowScroll = false,
   enabled = true,
-  footerCaption,
   children,
   className = '',
   style,
-}) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  ...rest
+}: ScrollExpandProps) => {
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
+  const mediaRef = useRef<HTMLImageElement & HTMLVideoElement>(null);
+  const titleRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const scrimRef = useRef<HTMLDivElement | null>(null);
+  const hintRef = useRef<HTMLDivElement | null>(null);
 
-  const [isHovered, setIsHovered] = useState(false);
-  const [isExpandedEnough, setIsExpandedEnough] = useState(false);
-  const expandedReadyRef = useRef(false);
-
-  const configRef = useRef({
+  const propsRef = useRef<Required<Pick<ScrollExpandProps, ConfigKey>>>({
     startWidth,
     startHeight,
     startRadius,
@@ -98,164 +96,8 @@ const ScrollExpand: React.FC<ScrollExpandProps> = ({
     enabled,
   });
 
-  const stateRef = useRef({
-    target: 0,
-    current: -1,
-    rafId: 0,
-    resizeRafId: 0,
-    lastTime: 0,
-    stageHeight: 0,
-    trackTopDoc: 0,
-    maxScrollPx: 1,
-    needsScrollRead: true,
-  });
-
-  const applyFrame = useCallback((p: number) => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const cfg = configRef.current;
-    const totalUnits = Math.max(0.2, cfg.scrollDistance) + Math.max(0, cfg.holdDistance);
-    const expandRatio = Math.max(0.2, cfg.scrollDistance) / (totalUnits || 1);
-    const expandT = smoothstepScrollExpand(0, expandRatio, p);
-
-    const w = cfg.startWidth + (100 - cfg.startWidth) * expandT;
-    const h = cfg.startHeight + (100 - cfg.startHeight) * expandT;
-    const insetX = (100 - w) * 0.5;
-    const insetY = (100 - h) * 0.5;
-    const radius = cfg.startRadius + (cfg.endRadius - cfg.startRadius) * expandT;
-    const zoom = cfg.mediaZoom + (1 - cfg.mediaZoom) * expandT;
-    const scrim = smoothstepScrollExpand(0.35, 0.9, expandT) * cfg.overlayScrim;
-    const overlay = smoothstepScrollExpand(0.65, 1, expandT);
-    const titleAlpha = 1 - smoothstepScrollExpand(0.05, 0.55, expandT);
-    const hintAlpha = 1 - smoothstepScrollExpand(0, 0.2, expandT);
-
-    container.style.setProperty('--se-progress', p.toFixed(4));
-    container.style.setProperty('--se-w', `${w.toFixed(2)}%`);
-    container.style.setProperty('--se-h', `${h.toFixed(2)}%`);
-    container.style.setProperty('--se-inset-x', `${insetX.toFixed(2)}%`);
-    container.style.setProperty('--se-inset-y', `${insetY.toFixed(2)}%`);
-    container.style.setProperty('--se-radius', `${radius.toFixed(2)}px`);
-    container.style.setProperty('--se-zoom', zoom.toFixed(4));
-    container.style.setProperty('--se-scrim', scrim.toFixed(4));
-    container.style.setProperty('--se-overlay', overlay.toFixed(4));
-    container.style.setProperty('--se-title', titleAlpha.toFixed(4));
-    container.style.setProperty('--se-hint', hintAlpha.toFixed(4));
-
-    const expandedReady = expandT >= 0.25;
-    if (expandedReady !== expandedReadyRef.current) {
-      expandedReadyRef.current = expandedReady;
-      setIsExpandedEnough(expandedReady);
-    }
-  }, []);
-
-  const updateTrackHeight = useCallback(() => {
-    const track = trackRef.current;
-    const stage = stageRef.current;
-    const container = containerRef.current;
-    if (!track || !stage || !container) return;
-
-    const cfg = configRef.current;
-    if (!cfg.enabled) {
-      track.style.height = 'auto';
-      return;
-    }
-
-    const baseH = cfg.useWindowScroll
-      ? window.innerHeight
-      : container.clientHeight || stage.offsetHeight || 600;
-    const totalScrollUnits = 1 + Math.max(0.2, cfg.scrollDistance) + Math.max(0, cfg.holdDistance);
-    const trackHeightPx = Math.round(baseH * totalScrollUnits);
-    track.style.height = `${trackHeightPx}px`;
-
-    const rect = track.getBoundingClientRect();
-    stateRef.current.stageHeight = baseH;
-    stateRef.current.trackTopDoc = rect.top + window.scrollY;
-    stateRef.current.maxScrollPx = Math.max(1, trackHeightPx - baseH);
-    stateRef.current.needsScrollRead = true;
-  }, []);
-
-  const readScrollInFrame = useCallback((): number => {
-    const cfg = configRef.current;
-    if (!cfg.enabled) return 0;
-
-    if (cfg.useWindowScroll) {
-      const scrolled = window.scrollY - stateRef.current.trackTopDoc;
-      return clampScrollExpand(scrolled / stateRef.current.maxScrollPx, 0, 1);
-    }
-
-    const container = containerRef.current;
-    if (!container) return 0;
-    const maxScroll = Math.max(1, container.scrollHeight - container.clientHeight);
-    return clampScrollExpand(container.scrollTop / maxScroll, 0, 1);
-  }, []);
-
-  const tickRef = useRef<((now: number) => void) | null>(null);
-
-  const tick = useCallback(
-    (now: number) => {
-      const st = stateRef.current;
-      const cfg = configRef.current;
-
-      // Perform scroll position calculation inside requestAnimationFrame
-      if (st.needsScrollRead) {
-        st.target = readScrollInFrame();
-        st.needsScrollRead = false;
-      }
-
-      // Fast exit when scroll progress is settled at boundary (0 or 1)
-      if (Math.abs(st.target - st.current) < 0.0005) {
-        if (st.current !== st.target) {
-          st.current = st.target;
-          applyFrame(st.current);
-        }
-        st.rafId = 0;
-        st.lastTime = 0;
-        return;
-      }
-
-      const dt = st.lastTime ? Math.min(0.1, (now - st.lastTime) / 1000) : 1 / 60;
-      st.lastTime = now;
-
-      if (cfg.smoothing <= 0 || st.current < 0) {
-        st.current = st.target;
-      } else {
-        const alpha = 1 - Math.exp(-dt / Math.max(0.001, cfg.smoothing));
-        st.current += (st.target - st.current) * alpha;
-      }
-
-      if (Math.abs(st.target - st.current) < 0.0008) {
-        st.current = st.target;
-        st.rafId = 0;
-        st.lastTime = 0;
-        applyFrame(st.current);
-        return;
-      }
-
-      applyFrame(st.current);
-      if (tickRef.current) {
-        st.rafId = requestAnimationFrame(tickRef.current);
-      }
-    },
-    [applyFrame, readScrollInFrame]
-  );
-
   useEffect(() => {
-    tickRef.current = tick;
-  }, [tick]);
-
-  const scheduleUpdate = useCallback(() => {
-    const st = stateRef.current;
-    st.needsScrollRead = true;
-    if (!st.rafId && tickRef.current) {
-      st.lastTime = 0;
-      st.rafId = requestAnimationFrame(tickRef.current);
-    }
-  }, []);
-
-  useEffect(() => {
-    const prev = configRef.current;
-    const next = {
+    propsRef.current = {
       startWidth,
       startHeight,
       startRadius,
@@ -268,22 +110,6 @@ const ScrollExpand: React.FC<ScrollExpandProps> = ({
       useWindowScroll,
       enabled,
     };
-
-    const changedKeys = (Object.keys(next) as ConfigKey[]).filter(
-      (k) => prev[k] !== next[k]
-    );
-    configRef.current = next;
-
-    if (
-      changedKeys.includes('scrollDistance') ||
-      changedKeys.includes('holdDistance') ||
-      changedKeys.includes('useWindowScroll') ||
-      changedKeys.includes('enabled')
-    ) {
-      updateTrackHeight();
-    }
-
-    scheduleUpdate();
   }, [
     startWidth,
     startHeight,
@@ -296,182 +122,182 @@ const ScrollExpand: React.FC<ScrollExpandProps> = ({
     overlayScrim,
     useWindowScroll,
     enabled,
-    updateTrackHeight,
-    scheduleUpdate,
   ]);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+  const applyProgress = useCallback((p: number) => {
+    const frame = frameRef.current;
+    const media = mediaRef.current;
+    if (!frame || !media) return;
+    const c = propsRef.current;
 
-    updateTrackHeight();
-    const initial = readScrollInFrame();
-    stateRef.current.target = initial;
-    stateRef.current.current = initial;
-    stateRef.current.needsScrollRead = false;
-    applyFrame(initial);
+    const e = smoothstep(0, 1, p);
+
+    const w = c.startWidth + (100 - c.startWidth) * e;
+    const h = c.startHeight + (100 - c.startHeight) * e;
+    const ix = Math.max(0, (100 - w) / 2);
+    const iy = Math.max(0, (100 - h) / 2);
+    const r = c.startRadius + (c.endRadius - c.startRadius) * e;
+    frame.style.clipPath = `inset(${iy}% ${ix}% ${iy}% ${ix}% round ${r}px)`;
+
+    media.style.transform = `scale(${c.mediaZoom + (1 - c.mediaZoom) * e})`;
+
+    if (scrimRef.current) scrimRef.current.style.opacity = `${c.overlayScrim * e}`;
+
+    if (titleRef.current) {
+      const out = smoothstep(0.4, 0.88, p);
+      titleRef.current.style.opacity = `${1 - out}`;
+      titleRef.current.style.transform = `translate3d(0, ${-28 * out}px, 0) scale(${1 + 0.06 * out})`;
+    }
+
+    if (hintRef.current) {
+      const gone = smoothstep(0, 0.12, p);
+      hintRef.current.style.opacity = `${1 - gone}`;
+      hintRef.current.style.transform = `translate3d(0, ${8 * gone}px, 0)`;
+    }
+
+    if (overlayRef.current) {
+      const inn = smoothstep(0.68, 1, p);
+      overlayRef.current.style.opacity = `${inn}`;
+      overlayRef.current.style.transform = `translate3d(0, ${18 * (1 - inn)}px, 0)`;
+      overlayRef.current.style.pointerEvents = inn > 0.5 ? 'auto' : 'none';
+    }
+  }, []);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    const track = trackRef.current;
+    const stage = stageRef.current;
+    if (!root || !track || !stage) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let raf = 0;
+    let current = 0;
+    let target = 0;
+    let stageH = 0;
+    let running = false;
+
+    const measure = () => {
+      const c = propsRef.current;
+      stageH = c.useWindowScroll ? window.innerHeight : root.clientHeight;
+      if (stageH <= 0) return;
+      stage.style.height = `${stageH}px`;
+      track.style.height = `${stageH * (1 + Math.max(0, c.scrollDistance) + Math.max(0, c.holdDistance))}px`;
+
+      const w = root.clientWidth || stageH;
+      stage.style.setProperty('--se-title-size', `${clamp(w * 0.075, 20, 84)}px`);
+    };
+
+    const readProgress = () => {
+      const c = propsRef.current;
+      if (!c.enabled) return 1;
+      const span = stageH * Math.max(0.01, c.scrollDistance);
+      if (c.useWindowScroll) {
+        const top = track.getBoundingClientRect().top;
+        return clamp(-top / span, 0, 1);
+      }
+      return clamp(root.scrollTop / span, 0, 1);
+    };
+
+    const tick = () => {
+      const c = propsRef.current;
+      const k = c.smoothing <= 0 ? 1 : 1 - Math.exp(-1 / (60 * c.smoothing));
+      current += (target - current) * k;
+      if (Math.abs(target - current) < 0.0004) {
+        current = target;
+        running = false;
+      }
+      applyProgress(current);
+      raf = running ? requestAnimationFrame(tick) : 0;
+    };
+
+    const kick = () => {
+      if (running) return;
+      running = true;
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
 
     const onScroll = () => {
-      scheduleUpdate();
+      target = readProgress();
+      if (propsRef.current.smoothing <= 0 || reduceMotion) {
+        current = target;
+        applyProgress(current);
+        return;
+      }
+      kick();
     };
 
     const onResize = () => {
-      const st = stateRef.current;
-      if (st.resizeRafId) cancelAnimationFrame(st.resizeRafId);
-      st.resizeRafId = requestAnimationFrame(() => {
-        st.resizeRafId = 0;
-        updateTrackHeight();
-        scheduleUpdate();
-      });
+      measure();
+      target = readProgress();
+      current = target;
+      applyProgress(current);
     };
 
-    const scrollTarget: HTMLElement | Window = useWindowScroll ? window : container;
-    scrollTarget.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize, { passive: true });
+    measure();
+    target = readProgress();
+    current = target;
+    applyProgress(current);
 
-    // Re-sync cached track offset inside requestAnimationFrame once layout settles
-    const syncTimer = window.setTimeout(() => {
-      requestAnimationFrame(() => {
-        updateTrackHeight();
-        scheduleUpdate();
-      });
-    }, 250);
+    const scroller = useWindowScroll ? window : root;
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+    const ro = new ResizeObserver(onResize);
+    ro.observe(root);
 
     return () => {
-      window.clearTimeout(syncTimer);
-      scrollTarget.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+      scroller.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
-      if (stateRef.current.rafId) {
-        cancelAnimationFrame(stateRef.current.rafId);
-        stateRef.current.rafId = 0;
-      }
-      if (stateRef.current.resizeRafId) {
-        cancelAnimationFrame(stateRef.current.resizeRafId);
-        stateRef.current.resizeRafId = 0;
-      }
+      ro.disconnect();
     };
-  }, [useWindowScroll, updateTrackHeight, readScrollInFrame, applyFrame, scheduleUpdate]);
+  }, [applyProgress, useWindowScroll]);
 
-  const rootClassName = [
-    'scroll-expand',
-    useWindowScroll ? 'scroll-expand--window' : '',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  const showFooterCaption = Boolean(footerCaption) && isHovered;
+  const media =
+    mediaType === 'video' ? (
+      <video
+        ref={mediaRef}
+        className="scroll-expand__media"
+        src={src}
+        poster={poster}
+        autoPlay
+        muted
+        loop
+        playsInline
+      />
+    ) : (
+      <img ref={mediaRef} className="scroll-expand__media" src={src} alt={alt} draggable={false} />
+    );
 
   return (
     <div
-      ref={containerRef}
+      ref={rootRef}
       data-testid="scroll-expand-root"
-      className={rootClassName}
+      className={`scroll-expand ${useWindowScroll ? '' : 'scroll-expand--scroller'} ${className}`.trim()}
       style={style}
+      {...rest}
     >
       <div ref={trackRef} className="scroll-expand__track">
         <div ref={stageRef} className="scroll-expand__stage">
-          <div
-            ref={frameRef}
-            tabIndex={0}
-            data-testid="scroll-expand-frame"
-            data-expanded={isExpandedEnough ? 'true' : 'false'}
-            data-caption-visible={showFooterCaption ? 'true' : 'false'}
-            onMouseEnter={() => setIsHovered(true)}
-            onPointerEnter={() => setIsHovered(true)}
-            onFocus={() => setIsHovered(true)}
-            onBlur={(e) => {
-              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-                setIsHovered(false);
-              }
-            }}
-            onMouseMove={() => {
-              if (!isHovered) setIsHovered(true);
-            }}
-            onMouseLeave={() => setIsHovered(false)}
-            className="scroll-expand__frame group focus-visible:outline-none"
-          >
-            {mediaType === 'video' ? (
-              <video
-                className="scroll-expand__media"
-                src={src}
-                poster={poster}
-                muted
-                loop
-                playsInline
-                autoPlay
-              />
-            ) : (
-              src && (
-                <img
-                  className="scroll-expand__media"
-                  src={src}
-                  alt={alt}
-                  draggable={false}
-                />
-              )
-            )}
-            <div className="scroll-expand__scrim" />
-            {children && <div className="scroll-expand__overlay">{children}</div>}
-
-            {/* Subtle Hover Prompt Pill at Bottom Right when Expanded and Not Yet Hovered */}
-            {footerCaption && isExpandedEnough && !isHovered && (
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-5 right-6 z-[3] inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0B0F14]/85 border border-white/15 text-[11px] font-tabular uppercase tracking-[0.16em] text-white/85 transition-opacity duration-300"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#68B2A0]" />
-                <span>Passe o mouse para ver a legenda técnica</span>
+          <div ref={frameRef} data-testid="scroll-expand-frame" className="scroll-expand__frame">
+            {media}
+            <div ref={scrimRef} className="scroll-expand__scrim" />
+            {children ? (
+              <div ref={overlayRef} className="scroll-expand__overlay">
+                {children}
               </div>
-            )}
-
-            {/* Hover-Revealed Footer Caption Bar at the Bottom of the Image */}
-            {footerCaption && (
-              <div
-                data-testid="scroll-expand-footer-caption"
-                role="region"
-                aria-label={`Legenda da imagem: ${footerCaption.title}`}
-                className="scroll-expand__footer-caption"
-              >
-                <div className="max-w-[1680px] mx-auto flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-                  <div className="space-y-1.5 max-w-3xl text-left">
-                    <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-tabular uppercase tracking-[0.18em] text-[#68B2A0]">
-                      {footerCaption.code && <span>{footerCaption.code}</span>}
-                      {footerCaption.normativeRef && (
-                        <>
-                          <span aria-hidden="true" className="text-white/30">
-                            ·
-                          </span>
-                          <span className="text-white/80">{footerCaption.normativeRef}</span>
-                        </>
-                      )}
-                    </div>
-                    <h4 className="font-editorial text-xl sm:text-2xl font-normal text-white leading-snug">
-                      {footerCaption.title}
-                    </h4>
-                    <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
-                      {footerCaption.description}
-                    </p>
-                  </div>
-
-                  {footerCaption.technicalSpec && (
-                    <div className="shrink-0 flex items-center gap-2 text-[11px] font-tabular text-white/70 border-t lg:border-t-0 border-white/10 pt-2.5 lg:pt-0">
-                      <span className="w-2 h-2 rounded-full bg-[#68B2A0]" />
-                      <span>{footerCaption.technicalSpec}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            ) : null}
           </div>
-
-          {title && <h2 className="scroll-expand__title">{title}</h2>}
-          {scrollHint && (
-            <div className="scroll-expand__hint">
-              <span className="scroll-expand__hint-dot" />
-              <span>{scrollHint}</span>
+          {title ? (
+            <div ref={titleRef} className="scroll-expand__title">
+              {title}
             </div>
-          )}
+          ) : null}
+          {scrollHint ? (
+            <div ref={hintRef} className="scroll-expand__hint">
+              {scrollHint}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

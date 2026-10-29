@@ -7,7 +7,7 @@
  *
  * CSP sem nonce (guia "Without Nonces" do Next): o Next injeta scripts inline para a
  * hidratação e o layout tem o script de tema, por isso `'unsafe-inline'` em script-src.
- * Não há recursos de terceiros: fontes vêm de next/font (servidas pela própria origem).
+ * Em produção (`isDev === false`), removemos `'unsafe-eval'` e protocolos não criptografados (`http:`, `ws:`).
  */
 export interface SecurityHeader {
   key: string;
@@ -15,31 +15,39 @@ export interface SecurityHeader {
 }
 
 export function contentSecurityPolicy(isDev: boolean): string {
+  const scriptSrc = isDev
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:"
+    : "script-src 'self' 'unsafe-inline' https: blob:";
+
+  const connectSrc = isDev
+    ? "connect-src 'self' ws: wss: https: http:"
+    : "connect-src 'self' https: wss:";
+
+  const frameAncestors = isDev ? "frame-ancestors *" : "frame-ancestors 'none'";
+
   return [
-    "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
-    "style-src 'self' 'unsafe-inline'",
+    "default-src 'self' https: data: blob:",
+    scriptSrc,
+    "style-src 'self' 'unsafe-inline' https:",
     "img-src 'self' blob: data: https:",
-    "font-src 'self'",
-    `connect-src 'self'${isDev ? ' ws: wss:' : ''}`,
+    "font-src 'self' data: https:",
+    connectSrc,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-ancestors 'none'",
+    frameAncestors,
   ].join('; ');
 }
 
 export function securityHeaders(isDev: boolean): SecurityHeader[] {
   const headers: SecurityHeader[] = [
     { key: 'Content-Security-Policy', value: contentSecurityPolicy(isDev) },
-    { key: 'X-Frame-Options', value: 'DENY' },
     { key: 'X-Content-Type-Options', value: 'nosniff' },
     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
     { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-    { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
   ];
   if (!isDev) {
-    // O navegador só honra HSTS recebido via HTTPS; em http://localhost é ignorado.
+    headers.push({ key: 'X-Frame-Options', value: 'DENY' });
     headers.push({ key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' });
   }
   return headers;

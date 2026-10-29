@@ -114,14 +114,10 @@ export function SocialLoginButtons({
       <div
         role="status"
         aria-live="polite"
-        className="space-y-3 mb-2"
+        className="sr-only"
         data-testid="social-loading"
       >
-        <span className="sr-only">Carregando opções de login social…</span>
-        <div
-          aria-hidden="true"
-          className="ui-skeleton h-11 !rounded-full"
-        />
+        <span>Carregando opções de login social…</span>
       </div>
     );
   }
@@ -152,7 +148,7 @@ export function SocialLoginButtons({
                   leaving !== null && !isLeaving ? true : undefined
                 }
                 aria-busy={isLeaving || undefined}
-                className="flex items-center justify-center gap-3 w-full min-h-12 px-4 py-3 rounded-full glass-flat !rounded-full glass-interactive text-text-main font-medium hover:bg-selection focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text-main transition-colors aria-disabled:opacity-60"
+                className="flex items-center justify-center gap-3 w-full min-h-12 px-4 py-3 rounded-xl glass-flat !rounded-xl glass-interactive text-text-main font-medium hover:bg-selection focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text-main transition-colors aria-disabled:opacity-60"
               >
                 {Icon ? <Icon /> : <KeyRound size={20} aria-hidden="true" />}
                 <span>

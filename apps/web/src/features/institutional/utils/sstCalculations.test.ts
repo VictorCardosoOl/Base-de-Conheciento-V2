@@ -145,7 +145,7 @@ test('toggleFaqAccordionItem handles single and multi-item disclosure transition
 });
 
 test('PROJECT_TITLE, calculateReadingProgress, formatNormativeCitation, and NORMATIVE_DOSSIERS work deterministically', () => {
-  assert.equal(PROJECT_TITLE, 'Base de Conhecimento');
+  assert.equal(PROJECT_TITLE, 'Base SST');
   assert.equal(calculateReadingProgress(0, 1000), 0);
   assert.equal(calculateReadingProgress(500, 1000), 50);
   assert.equal(calculateReadingProgress(1500, 1000), 100);

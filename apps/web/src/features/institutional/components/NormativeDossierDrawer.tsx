@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   X,
@@ -15,6 +16,7 @@ import {
   ArrowUpRight,
   CheckSquare,
   Square,
+  FileText,
 } from 'lucide-react';
 import {
   NORMATIVE_DOSSIERS,
@@ -22,6 +24,21 @@ import {
   formatNormativeCitation,
 } from '../utils/sstCalculations';
 import { useClipboardCopy, useModalEscape } from '../hooks/useInteractiveHooks';
+
+const DOSSIER_SLUG_MAP: Record<string, string> = {
+  'S-2210': 'evento-s2210-comunicacao-cat',
+  'S-2220': 'evento-s2220-monitoramento-saude',
+  'S-2221': 'evento-s2221-exame-toxicologico',
+  'S-2240': 'evento-s2240-condicoes-ambientais',
+  'NR-01': 'intro-sst',
+  'NR-07': 'pcmso',
+  'NR-15': 'diferenca-li-lp',
+  'NR-16': 'diferenca-li-lp',
+  'LTCAT': 'LTCAT',
+  'PPP': 'ppp',
+  'e-CAC': 'Ecac',
+  'STF 555': 'aposentadoria-especial',
+};
 
 interface NormativeDossierDrawerProps {
   dossierCode: string | null;
@@ -250,36 +267,47 @@ export const NormativeDossierDrawer: React.FC<NormativeDossierDrawerProps> = ({
 
             {/* Citation & Cross-Search Actions */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleCopyCitation}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-tabular uppercase tracking-[0.16em] border border-[var(--border-hairline)] hover:border-[#68B2A0] text-[var(--text-primary)] hover:text-[#68B2A0] transition-colors whitespace-nowrap"
+              <Link
+                href={`/artigo/${DOSSIER_SLUG_MAP[dossier.code] || 'esocial-sst'}`}
+                onClick={onClose}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold text-white bg-[var(--accent-editorial)] hover:opacity-90 shadow-sm transition-all"
               >
-                {copiedCitation ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-[#68B2A0]" />
-                    <span className="text-[#68B2A0]">Citação Copiada</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5 text-[#68B2A0]" />
-                    <span>Copiar Citação Normativa</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onOpenCommandPalette();
-                }}
-                className="inline-flex items-center gap-1.5 text-xs font-tabular uppercase tracking-[0.16em] text-[#7AA6C7] hover:text-[#68B2A0] underline underline-offset-4 whitespace-nowrap"
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>Pesquisar no Acervo Geral (⌘K)</span>
+                <FileText className="w-3.5 h-3.5" />
+                <span>Ler Artigo Técnico Completo</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
+              </Link>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyCitation}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-xs font-tabular uppercase tracking-[0.16em] border border-[var(--border-hairline)] hover:border-[#68B2A0] text-[var(--text-primary)] hover:text-[#68B2A0] transition-colors whitespace-nowrap"
+                >
+                  {copiedCitation ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-[#68B2A0]" />
+                      <span className="text-[#68B2A0]">Citação Copiada</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-[#68B2A0]" />
+                      <span>Copiar Citação</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenCommandPalette();
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-tabular uppercase tracking-[0.16em] text-[#7AA6C7] hover:text-[#68B2A0] underline underline-offset-4 whitespace-nowrap"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Acervo (⌘K)</span>
+                </button>
+              </div>
             </div>
           </div>
 

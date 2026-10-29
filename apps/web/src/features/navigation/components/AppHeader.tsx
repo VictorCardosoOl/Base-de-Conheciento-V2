@@ -138,6 +138,7 @@ export function AppHeader({
         <HeaderAction tip={isDarkMode ? 'Modo claro' : 'Modo escuro'}>
           <button
             type="button"
+            data-testid="app-theme-toggle"
             className="nav-icon-button nav-theme-toggle"
             aria-label={isDarkMode ? 'Ativar modo claro' : 'Ativar modo escuro'}
             aria-pressed={isDarkMode}

@@ -1,3 +1,46 @@
-.gradual-blur {
+.gradual-blur-root {
   pointer-events: none;
+  user-select: none;
+  transition: opacity 0.25s ease;
+}
+
+.gradual-blur-parent {
+  position: absolute;
+}
+
+.gradual-blur-page {
+  position: fixed;
+}
+
+.gradual-blur-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.gradual-blur-top {
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.gradual-blur-left {
+  top: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.gradual-blur-right {
+  top: 0;
+  bottom: 0;
+  right: 0;
+}
+
+.gradual-blur-hidden {
+  opacity: 0;
+}
+
+.gradual-blur-layer {
+  position: absolute;
+  inset: 0;
 }

@@ -3,9 +3,19 @@ import {
   mockUsers,
   mockSessions,
   createMockAccessToken,
+  isMockAuthAllowed,
+  pruneMockSessions,
+  resolveCookieSameSite,
 } from '@/lib/mock-auth-store';
 
 export async function POST(request: NextRequest) {
+  if (!isMockAuthAllowed()) {
+    return NextResponse.json(
+      { error: { code: 'FORBIDDEN', message: 'Mock auth desativado em ambiente de produção' } },
+      { status: 403 }
+    );
+  }
+
   try {
     const refreshToken = request.cookies.get('kb_rt')?.value;
 
@@ -28,26 +38,31 @@ export async function POST(request: NextRequest) {
 
     // Rotaciona o refresh token
     mockSessions.delete(refreshToken);
+    pruneMockSessions();
     const newSessionId = crypto.randomUUID();
     mockSessions.set(newSessionId, { userId: foundUser.id, createdAt: new Date() });
 
-    const accessToken = await createMockAccessToken(foundUser, newSessionId);
+    const accessToken = await createMockAccessToken(foundUser, newSessionId, request.nextUrl.origin);
     const cookieName = process.env.AUTH_ACCESS_COOKIE_NAME || 'kb_at';
+    const isSecure =
+      request.headers.get('x-forwarded-proto') === 'https' ||
+      request.url.startsWith('https://');
+    const sameSite = resolveCookieSameSite(isSecure);
 
     const response = NextResponse.json({ ok: true });
     response.cookies.set(cookieName, accessToken, {
       path: '/',
       httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
+      sameSite,
+      secure: isSecure,
       maxAge: 3600,
     });
 
     response.cookies.set('kb_rt', newSessionId, {
       path: '/auth',
       httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
+      sameSite,
+      secure: isSecure,
       maxAge: 7 * 86400,
     });
 

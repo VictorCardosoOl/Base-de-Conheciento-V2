@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Search, X, FileText, ArrowRight, Lock, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
+import { Search, X, FileText, ArrowRight, BookOpen, CheckCircle2 } from 'lucide-react';
 import { sanitizeTextInput } from '../utils/sstCalculations';
 import { useModalEscape } from '../hooks/useInteractiveHooks';
 
@@ -22,6 +23,7 @@ interface SearchItem {
   summary: string;
   tags: readonly string[];
   latencyMs: number;
+  slug?: string;
 }
 
 const KNOWLEDGE_BASE: readonly SearchItem[] = [
@@ -34,6 +36,7 @@ const KNOWLEDGE_BASE: readonly SearchItem[] = [
       'Transmissão obrigatória até o primeiro dia útil seguinte ao da ocorrência. Em caso de morte, comunicação imediata ao e-CAC.',
     tags: ['CAT', 'Acidente Típico', 'Trajeto', 'eSocial S-2210', 'Prazo Legal'],
     latencyMs: 3.2,
+    slug: 'evento-s2210-comunicacao-cat',
   },
   {
     id: 's2220',
@@ -44,6 +47,7 @@ const KNOWLEDGE_BASE: readonly SearchItem[] = [
       'Detalhamento de exames clínicos, complementares (admissional, periódico, retorno, demissional) e CRM do médico coordenador.',
     tags: ['ASO', 'PCMSO', 'Exames Complementares', 'S-2220', 'NR-07'],
     latencyMs: 2.8,
+    slug: 'evento-s2220-monitoramento-saude',
   },
   {
     id: 's2221',
@@ -54,6 +58,7 @@ const KNOWLEDGE_BASE: readonly SearchItem[] = [
       'Registro do exame toxicológico com janela de detecção mínima de 90 dias para categorias C, D e E (Portaria MTE nº 612/2024).',
     tags: ['Toxicológico', 'Motorista C/D/E', 'Janela 90 dias', 'S-2221'],
     latencyMs: 3.5,
+    slug: 'evento-s2221-exame-toxicologico',
   },
   {
     id: 's2240',
@@ -64,6 +69,7 @@ const KNOWLEDGE_BASE: readonly SearchItem[] = [
       'Mapeamento de agentes nocivos físicos, químicos e biológicos conforme Tabela 24 do eSocial e código GFIP para aposentadoria especial.',
     tags: ['Tabela 24', 'Fatores de Risco', 'LTCAT', 'PPP Eletrônico', 'S-2240'],
     latencyMs: 4.1,
+    slug: 'evento-s2240-condicoes-ambientais',
   },
   {
     id: 'pgr-ltcat',
@@ -74,6 +80,7 @@ const KNOWLEDGE_BASE: readonly SearchItem[] = [
       'PGR foca em gestão contínua e prevenção trabalhista (NR-01). LTCAT possui finalidade exclusivamente previdenciária para caracterização do PPP.',
     tags: ['PGR', 'LTCAT', 'NR-01', 'Inventário de Riscos', 'Previdenciário'],
     latencyMs: 3.1,
+    slug: 'LTCAT',
   },
   {
     id: 'insalubridade-periculosidade',
@@ -84,6 +91,7 @@ const KNOWLEDGE_BASE: readonly SearchItem[] = [
       'Insalubridade: 10%, 20% ou 40% sobre o salário mínimo. Periculosidade: 30% sobre o salário base. Regras de cumulatividade e laudos específicos.',
     tags: ['NR-15', 'NR-16', 'Adicional 30%', 'Grau Máximo 40%', 'CLT Art. 192'],
     latencyMs: 2.9,
+    slug: 'diferenca-li-lp',
   },
   {
     id: 'xml-protocol',
@@ -94,6 +102,7 @@ const KNOWLEDGE_BASE: readonly SearchItem[] = [
       'Tratativa de erros comuns de recepção e processamento (Código 401, 403, 162), assinatura digital via certificado A1/A3 e regras de lote.',
     tags: ['XML', 'XSD', 'Erro 401', 'Assinatura Digital', 'SOAP e-CAC'],
     latencyMs: 3.9,
+    slug: 'informacoes-xml',
   },
   {
     id: 'aposentadoria-especial',
@@ -104,6 +113,7 @@ const KNOWLEDGE_BASE: readonly SearchItem[] = [
       'Critérios de nocividade contínua, eficácia dos EPIs/EPCs no PPP e jurisprudência pacificada do Tema 555 do STF.',
     tags: ['Tema 555 STF', 'EPI Eficaz', 'Ruído NHO-01', 'PPP', 'INSS'],
     latencyMs: 4.3,
+    slug: 'aposentadoria-especial',
   },
 ] as const;
 
@@ -289,15 +299,14 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
                   {currentSelection.tags.join(' · ')}
                 </div>
 
-                <div className="mt-4 p-4 rounded-xl border border-[#5B8FB9]/25 bg-[#5B8FB9]/[0.06] flex items-start gap-3">
-                  <Lock className="w-4 h-4 text-[#5B8FB9] shrink-0 mt-0.5" />
+                <div className="mt-4 p-4 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                   <div className="text-xs">
                     <p className="font-semibold text-[var(--text-primary)]">
-                      Artigo Completo Protegido
+                      Artigo Técnico Disponível
                     </p>
                     <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 leading-relaxed">
-                      Matrizes integrais de risco, modelos de XML e scripts de atendimento
-                      exclusivos para membros autenticados.
+                      Texto normativo integral, prazos legais, cruzamentos de tabelas e fluxogramas auditados.
                     </p>
                   </div>
                 </div>
@@ -305,20 +314,33 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
             ) : null}
 
             <div className="pt-4 border-t border-[var(--border-hairline)] flex items-center justify-between gap-3 mt-4">
-              <span className="text-[11px] text-[var(--text-muted)]">
-                Acesso institucional corporativo
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onOpenRegister();
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-spectral-gradient rounded-full shadow-sm hover:opacity-95 transition-opacity"
+              <Link
+                href="/artigos"
+                onClick={onClose}
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] underline transition-colors"
               >
-                <span>Desbloquear Acesso</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+                Ver todos os artigos
+              </Link>
+              {currentSelection?.slug ? (
+                <Link
+                  href={`/artigo/${currentSelection.slug}`}
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[var(--accent-editorial)] rounded-full shadow-sm hover:opacity-95 transition-opacity"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Ler Artigo Completo</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              ) : (
+                <Link
+                  href="/artigos"
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[var(--accent-editorial)] rounded-full shadow-sm hover:opacity-95 transition-opacity"
+                >
+                  <span>Abrir Acervo de Artigos</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              )}
             </div>
           </div>
         </div>

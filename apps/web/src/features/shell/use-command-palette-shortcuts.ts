@@ -8,9 +8,11 @@ import { useEffect, type Dispatch, type SetStateAction } from 'react';
  */
 export function useCommandPaletteShortcuts(
   setIsOpen: Dispatch<SetStateAction<boolean>>,
-  isArticleRoute: boolean | undefined
+  isArticleRoute: boolean | undefined,
+  enabled: boolean = true
 ) {
   useEffect(() => {
+    if (!enabled) return;
     const handleGlobalKeys = (e: KeyboardEvent) => {
       const activeTag = document.activeElement?.tagName.toLowerCase();
       const isEditing = activeTag === 'input' || activeTag === 'textarea';
@@ -25,5 +27,5 @@ export function useCommandPaletteShortcuts(
     };
     window.addEventListener('keydown', handleGlobalKeys);
     return () => window.removeEventListener('keydown', handleGlobalKeys);
-  }, [setIsOpen, isArticleRoute]);
+  }, [setIsOpen, isArticleRoute, enabled]);
 }

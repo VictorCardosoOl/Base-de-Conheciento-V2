@@ -251,6 +251,7 @@ export async function register(
     password: string;
     username: string;
     displayName: string;
+    honeypot?: string;
   } & TermsAndProfile
 ): Promise<RegisterResult> {
   let reply: AuthReply;
@@ -263,6 +264,7 @@ export async function register(
         password: input.password,
         username: input.username,
         display_name: input.displayName,
+        ...(input.honeypot ? { website_url: input.honeypot } : {}),
         ...termsAndProfileBody(input),
       }),
     });

@@ -1,6 +1,19 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { isMockAuthAllowed, mockSessions } from '@/lib/mock-auth-store';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  if (!isMockAuthAllowed()) {
+    return NextResponse.json(
+      { error: { code: 'FORBIDDEN', message: 'Mock auth desativado em ambiente de produção' } },
+      { status: 403 }
+    );
+  }
+
+  const refreshToken = request.cookies.get('kb_rt')?.value;
+  if (refreshToken) {
+    mockSessions.delete(refreshToken);
+  }
+
   const cookieName = process.env.AUTH_ACCESS_COOKIE_NAME || 'kb_at';
   const response = NextResponse.json({ ok: true });
 

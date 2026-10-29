@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { ArrowUpRight, Check, Plus } from 'lucide-react';
 import type { FAQItem } from '@/features/articles/types';
 import { useReadingQueue } from '@/features/reading/use-reading-queue';
-import { GradualBlur } from '@/components/ui/GradualBlur';
 
 interface CardItemProps {
   item: FAQItem;
@@ -19,17 +18,16 @@ export const CardItem: React.FC<CardItemProps> = ({ item, onClick, isInQueue, on
   return (
     <article
       style={{ '--enter-index': index } as React.CSSProperties}
-      className="enter-rise glass-card glass-interactive group relative flex h-full flex-col justify-between gap-5 p-6 sm:p-7 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-4 has-[a:focus-visible]:outline-text-main rounded-[20px]"
+      className="group relative flex h-full flex-col justify-between gap-5 p-6 sm:p-7 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] hover:border-[var(--border)] transition-colors duration-150 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-[var(--accent-editorial)]"
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3.5">
         {/* Top Header: Category Tag & Save Bookmark Button */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2.5 text-[11px] uppercase tracking-[0.14em]">
-            <span className="glass-flat inline-flex items-center gap-1.5 !rounded-[20px] px-3 py-1 font-semibold text-text-main shadow-xs">
-              <span className="h-1.5 w-1.5 rounded-full bg-text-main opacity-80" aria-hidden="true" />
+          <div className="flex min-w-0 items-center gap-2.5 text-[11px] font-mono uppercase tracking-wider">
+            <span className="inline-flex items-center rounded px-2 py-0.5 font-medium text-[var(--text-secondary)] bg-[var(--bg-elevated)] border border-[var(--border-hairline)]">
               {item.category}
             </span>
-            <span className="truncate text-[11px] font-medium text-text-muted">{item.date}</span>
+            <span className="truncate text-[11px] text-[var(--text-muted)]">{item.date}</span>
           </div>
           <button
             type="button"
@@ -44,18 +42,18 @@ export const CardItem: React.FC<CardItemProps> = ({ item, onClick, isInQueue, on
                 : `Salvar "${item.question}" na lista de leitura`
             }
             aria-pressed={isInQueue}
-            className={`relative z-10 shrink-0 rounded-[20px] p-2.5 transition-[opacity,transform,background-color,color] duration-200 hover:scale-110 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text-main ${
+            className={`relative z-10 shrink-0 rounded-md p-1.5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-editorial)] ${
               isInQueue
-                ? 'bg-text-main/10 text-text-main shadow-xs'
-                : 'text-text-muted hover:bg-[var(--glass-bg-hover)] hover:text-text-main opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100'
+                ? 'bg-[var(--accent-editorial)] text-white'
+                : 'text-[var(--text-muted)] hover:bg-[var(--bg-paper-warm)] hover:text-[var(--text-main)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100'
             }`}
           >
-            {isInQueue ? <Check size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
+            {isInQueue ? <Check size={15} aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}
           </button>
         </div>
 
-        {/* Title with Fluid Typography */}
-        <h3 className="font-serif text-[1.45rem] sm:text-[1.65rem] leading-[1.18] tracking-[-0.015em] text-text-main group-hover:text-text-muted transition-colors duration-200">
+        {/* Title with Editorial Serif */}
+        <h3 className="font-serif text-[1.35rem] sm:text-[1.5rem] font-medium leading-[1.22] tracking-tight text-[var(--text-main)] group-hover:text-[var(--accent-editorial)] transition-colors duration-150">
           <Link
             href={`/artigo/${item.id}`}
             scroll={false}
@@ -67,22 +65,22 @@ export const CardItem: React.FC<CardItemProps> = ({ item, onClick, isInQueue, on
         </h3>
 
         {/* Answer Snippet */}
-        <p className="line-clamp-3 text-[0.95rem] leading-relaxed text-text-muted font-light">{item.answer}</p>
+        <p className="line-clamp-3 text-[0.875rem] leading-relaxed text-[var(--text-secondary)] font-normal">{item.answer}</p>
       </div>
 
       {/* Footer with Action CTA */}
-      <div className="pt-2 border-t border-border flex items-center justify-between">
+      <div className="pt-3 border-t border-[var(--border-hairline)] flex items-center justify-between text-xs font-mono uppercase tracking-wider text-[var(--text-muted)]">
         <span
           aria-hidden="true"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-text-main transition-colors duration-200"
+          className="inline-flex items-center gap-1.5 font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-editorial)] transition-colors duration-150"
         >
-          Ler artigo
+          <span>Ler artigo</span>
           <ArrowUpRight
-            size={15}
-            className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+            size={14}
+            className="transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
           />
         </span>
-        <span className="text-[11px] font-mono text-text-muted/80 tracking-wide">
+        <span className="text-[11px] text-[var(--text-muted)]/80">
           Documento verificado
         </span>
       </div>
@@ -117,18 +115,6 @@ export const ArticleGrid = ({
           </li>
         ))}
       </ul>
-
-      {/* Gradual Blur no topo e no final da grade de cards ao rolar */}
-      <GradualBlur
-        position="bottom"
-        target="page"
-        height="5rem"
-        strength={2}
-        layers={8}
-        curve="linear"
-        exponential
-        autoHide
-      />
     </div>
   );
 };

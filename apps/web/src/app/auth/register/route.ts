@@ -3,22 +3,42 @@ import {
   mockUsers,
   mockSessions,
   createMockAccessToken,
+  hashMockPassword,
+  isMockAuthAllowed,
+  pruneMockSessions,
+  pruneRateLimitMap,
+  resolveCookieSameSite,
   type MockUserRecord,
 } from '@/lib/mock-auth-store';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/features/auth/client';
+import {
+  displayNameProblem,
+  isReservedUsername,
+  isValidUsername,
+  normalizeUsername,
+} from '@/features/auth/identity';
 import { isDisposableEmail, sanitizeInput } from '@/features/auth/security';
 
 // Rate Limiting local simples por IP: máximo 5 tentativas de cadastro por IP a cada 10 minutos
 const ipRateLimits = new Map<string, { count: number; expiresAt: number }>();
 
 export async function POST(request: NextRequest) {
+  if (!isMockAuthAllowed()) {
+    return NextResponse.json(
+      { error: { code: 'FORBIDDEN', message: 'Mock auth desativado em ambiente de produção' } },
+      { status: 403 }
+    );
+  }
+
   try {
     const ip =
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       request.headers.get('x-real-ip') ||
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       '127.0.0.1';
 
-    // 1. Rate Limiting Check
+    // 1. Rate Limiting Check com expurgo de chaves expiradas
     const now = Date.now();
+    pruneRateLimitMap(ipRateLimits, now);
     const limitInfo = ipRateLimits.get(ip);
     if (limitInfo && limitInfo.expiresAt > now) {
       if (limitInfo.count >= 5) {
@@ -39,7 +59,6 @@ export async function POST(request: NextRequest) {
     // Se o campo fantasma website_url foi preenchido, é um bot!
     if (body.website_url) {
       console.warn('[Security] Bot detectado via honeypot. Descartando silenciosamente:', ip);
-      // Resposta 200 simulada para não alertar o bot de que foi detectado
       return NextResponse.json({ ok: true, user: { id: 'dummy', email: 'bot@blocked.local' } });
     }
 
@@ -51,9 +70,47 @@ export async function POST(request: NextRequest) {
     const organization = sanitizeInput(body.organization);
     const professionalArea = sanitizeInput(body.professional_area ?? body.professionalArea);
 
-    if (!email || !password || !username || !displayName) {
+    if (!email || !password || typeof password !== 'string' || !username || !displayName) {
       return NextResponse.json(
         { error: { code: 'VALIDATION_ERROR', message: 'Dados incompletos' } },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            details: [{ field: 'password', message: `A senha deve ter entre ${PASSWORD_MIN_LENGTH} e ${PASSWORD_MAX_LENGTH} caracteres.` }],
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const normUser = normalizeUsername(String(username));
+    if (!isValidUsername(normUser) || isReservedUsername(normUser)) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            details: [{ field: 'username', message: 'Nome de usuário inválido ou reservado.' }],
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const nameError = displayNameProblem(displayName);
+    if (nameError) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            details: [{ field: 'display_name', message: nameError }],
+          },
+        },
         { status: 400 }
       );
     }
@@ -74,7 +131,6 @@ export async function POST(request: NextRequest) {
     }
 
     const normEmail = String(email).trim().toLowerCase();
-    const normUser = String(username).trim().toLowerCase();
 
     if (mockUsers.has(normEmail)) {
       return NextResponse.json(
@@ -97,6 +153,7 @@ export async function POST(request: NextRequest) {
       username: normUser,
       displayName: displayName,
       role: 'user',
+      passwordHash: hashMockPassword(password),
       mustChangePassword: false,
       organization: organization || null,
       professionalArea: professionalArea || null,
@@ -106,11 +163,16 @@ export async function POST(request: NextRequest) {
     mockUsers.set(normEmail, newUser);
     mockUsers.set(normUser, newUser);
 
+    pruneMockSessions();
     const sessionId = crypto.randomUUID();
     mockSessions.set(sessionId, { userId, createdAt: new Date() });
 
-    const accessToken = await createMockAccessToken(newUser, sessionId);
+    const accessToken = await createMockAccessToken(newUser, sessionId, request.nextUrl.origin);
     const cookieName = process.env.AUTH_ACCESS_COOKIE_NAME || 'kb_at';
+    const isSecure =
+      request.headers.get('x-forwarded-proto') === 'https' ||
+      request.url.startsWith('https://');
+    const sameSite = resolveCookieSameSite(isSecure);
 
     const response = NextResponse.json(
       {
@@ -131,16 +193,16 @@ export async function POST(request: NextRequest) {
     response.cookies.set(cookieName, accessToken, {
       path: '/',
       httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
+      sameSite,
+      secure: isSecure,
       maxAge: 3600,
     });
 
     response.cookies.set('kb_rt', sessionId, {
       path: '/auth',
       httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
+      sameSite,
+      secure: isSecure,
       maxAge: 7 * 86400,
     });
 

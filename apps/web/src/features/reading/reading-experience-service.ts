@@ -1,3 +1,5 @@
+import { safeStorage } from '@/lib/storage';
+
 export interface TypographyPreferences {
   fontSize: 'sm' | 'base' | 'lg' | 'xl';
   lineHeight: 'tight' | 'normal' | 'relaxed' | 'loose';
@@ -41,36 +43,22 @@ const DEFAULT_TYPOGRAPHY: TypographyPreferences = {
   fontFamily: 'serif',
 };
 
-const logStorageError = (err: unknown) => console.error('Storage Error:', err);
-
-/** Lê e desserializa um valor do localStorage; retorna `fallback` em ausência ou erro. */
+/** Lê e desserializa um valor do localStorage via safeStorage; retorna `fallback` em ausência ou erro. */
 function readJSON<T>(key: string, fallback: T): T {
-  try {
-    if (typeof window === 'undefined') return fallback;
-    const saved = localStorage.getItem(key);
-    return saved ? (JSON.parse(saved) as T) : fallback;
-  } catch (err) {
-    logStorageError(err);
-    return fallback;
-  }
+  return safeStorage.getItem<T>(key, fallback);
 }
 
-/** Serializa e grava no localStorage, opcionalmente emitindo um CustomEvent. Retorna sucesso. */
+/** Serializa e grava no localStorage via safeStorage, opcionalmente emitindo um CustomEvent. Retorna sucesso. */
 function writeJSON(
   key: string,
   value: unknown,
   event?: { name: string; detail?: unknown }
 ): boolean {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-    if (event) {
-      window.dispatchEvent(new CustomEvent(event.name, { detail: event.detail }));
-    }
-    return true;
-  } catch (err) {
-    logStorageError(err);
-    return false;
+  const saved = safeStorage.setItem(key, value);
+  if (saved && event && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(event.name, { detail: event.detail }));
   }
+  return saved;
 }
 
 /** Insere `value` no topo de uma lista MRU, removendo duplicatas e limitando o tamanho. */

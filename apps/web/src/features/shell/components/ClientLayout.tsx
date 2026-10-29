@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, lazy, useRef } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/features/navigation/components/Sidebar';
-import { InstitutionalNavbar } from '@/features/navigation/components/InstitutionalNavbar';
 import { Footer } from '@/features/navigation/components/Footer';
+import { InstitutionalNavbar } from '@/features/institutional/components/InstitutionalNavbar';
+import { InstitutionalFooter } from '@/features/institutional/components/InstitutionalFooter';
 import { useConsent } from '@/features/consent/ConsentContext';
 import { useReadingQueue } from '@/features/reading/use-reading-queue';
 import { initTelemetry, stopTelemetry } from '@/features/analytics/telemetry';
@@ -18,20 +19,11 @@ import { LiquidGlassEffects } from './LiquidGlassEffects';
 import { SmoothScroll } from './SmoothScroll';
 import { ToastProvider } from '@/components/ui/Toast';
 
-// Lazy loaded components para melhorar o tempo de carregamento inicial
-const CommandPalette = lazy(() =>
-  import('@/features/search/components/CommandPalette').then((m) => ({
-    default: m.CommandPalette,
-  }))
-);
-const BackToTopButton = lazy(() =>
-  import('./BackToTopButton').then((m) => ({ default: m.BackToTopButton }))
-);
-const CookieBanner = lazy(() =>
-  import('@/features/consent/components/CookieBanner').then((m) => ({ default: m.CookieBanner }))
-);
+import { CommandPalette } from '@/features/search/components/CommandPalette';
+import { BackToTopButton } from './BackToTopButton';
+import { CookieBanner } from '@/features/consent/components/CookieBanner';
 
-const MAIN_LAYOUT_PADDING_CLASS = 'pt-24 md:pt-32 px-6 md:px-12 2xl:px-16';
+const MAIN_LAYOUT_PADDING_CLASS = 'pt-24 md:pt-32 2xl:pt-40 3xl:pt-48 4xl:pt-56 px-6 md:px-12 2xl:px-16 3xl:px-24 4xl:px-32';
 const SOBRE_CATEGORY = 'Sobre' as Category;
 
 /** Notificações (toasts) disponíveis para todas as páginas e para a navegação. */
@@ -65,16 +57,28 @@ function ClientLayoutContent({
     else stopTelemetry();
   }, [hasConsented]);
 
-  useCommandPaletteShortcuts(setIsCommandPaletteOpen, isArticleRoute);
+  const isAuthRoute =
+    pathname === '/login' ||
+    pathname === '/cadastro' ||
+    pathname === '/cadastro/social' ||
+    pathname === '/esqueci-senha' ||
+    pathname === '/redefinir-senha' ||
+    pathname === '/verificar-email';
+  const isInstitutionalLanding = pathname === '/';
+  const isAuthenticated = Boolean(session && session.authenticated);
+  const isPublicInstitutionalOrAuth =
+    isInstitutionalLanding || isAuthRoute || (pathname === '/sobre' && !isAuthenticated);
+
+  useCommandPaletteShortcuts(setIsCommandPaletteOpen, isArticleRoute, !isPublicInstitutionalOrAuth);
 
   const handleCategorySelect = (cat: Category | null) => {
     setCurrentCategory(cat);
     if (cat === SOBRE_CATEGORY) {
       router.push('/sobre');
     } else if (cat) {
-      router.push(`/?category=${encodeURIComponent(cat)}`);
+      router.push(`/artigos?category=${encodeURIComponent(cat)}`);
     } else {
-      router.push('/');
+      router.push('/artigos');
     }
   };
 
@@ -109,24 +113,14 @@ function ClientLayoutContent({
     return () => mm.revert();
   }, [pathname]);
 
-  // Determina se a rota atual é pública/institucional ou de fluxo de autenticação pública
-  const isAuthRoute =
-    pathname === '/login' ||
-    pathname === '/cadastro' ||
-    pathname === '/cadastro/social' ||
-    pathname === '/esqueci-senha' ||
-    pathname === '/redefinir-senha' ||
-    pathname === '/verificar-email';
-  const isInstitutionalLanding = pathname === '/';
-  const isInstitutionalRoute = isInstitutionalLanding || pathname === '/sobre' || isAuthRoute;
-  const isAuthenticated = Boolean(session && session.authenticated);
-  const showInstitutionalNavbar = isInstitutionalRoute && !isAuthenticated && !isInstitutionalLanding;
+  // Nas rotas de login/cadastro (e /sobre público), exibe exatamente a mesma InstitutionalNavbar e InstitutionalFooter da Home (/)
+  const useInstitutionalChrome =
+    !isInstitutionalLanding && (isAuthRoute || (pathname === '/sobre' && !isAuthenticated));
 
-  const sidebar = showInstitutionalNavbar ? (
+  const sidebar = useInstitutionalChrome ? (
     <InstitutionalNavbar
-      isDarkMode={isDarkMode}
-      onToggleTheme={toggleDark}
-      isAuthenticated={isAuthenticated}
+      activeSection={pathname === '/sobre' ? 'sobre-page' : 'hero'}
+      onOpenLogin={() => router.push('/login')}
     />
   ) : isInstitutionalLanding && !isAuthenticated ? null : (
     <Sidebar
@@ -141,9 +135,7 @@ function ClientLayoutContent({
     />
   );
 
-  // A CommandPalette só é instanciada para usuários autenticados ou na área logada,
-  // impedindo o download do catálogo de artigos por visitantes na landing page
-  const commandPalette = isCommandPaletteOpen && (!showInstitutionalNavbar || isAuthenticated) && (
+  const commandPalette = isCommandPaletteOpen && (
     <Suspense fallback={null}>
       <CommandPalette
         isOpen={isCommandPaletteOpen}
@@ -167,10 +159,10 @@ function ClientLayoutContent({
     <SessionSummaryContext.Provider value={session}>
       {isInstitutionalLanding ? (
         <>
-          <div className="relative z-10 flex min-h-screen selection:bg-selection">
-            <main className="flex-1 w-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] relative overflow-x-hidden">
+          <div className="relative z-10 flex min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] selection:bg-selection">
+            <main className="flex-1 w-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] relative">
               <div className="w-full">
-                <div ref={containerRef} className="w-full transform-gpu">
+                <div ref={containerRef} className="w-full">
                   {children}
                 </div>
               </div>
@@ -190,25 +182,33 @@ function ClientLayoutContent({
             {commandPalette}
 
             <main
-              className="flex-1 w-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] relative overflow-x-hidden"
+              className="flex-1 w-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] relative"
             >
               <div
-                className={`max-w-[2000px] 4xl:max-w-[2400px] mx-auto w-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+                className={`max-w-[2000px] 3xl:max-w-[2240px] 4xl:max-w-[2560px] mx-auto w-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
                             ${
                               isArticleRoute
-                                ? 'px-4 sm:px-8 md:px-12 2xl:px-16 pt-20 md:pt-24 pb-16'
-                                : `px-5 sm:px-8 2xl:px-16 3xl:px-24 4xl:px-32 max-lg:pt-24 max-lg:pb-12 lg:pt-28 lg:pb-12 2xl:pb-16 3xl:pb-24 ${MAIN_LAYOUT_PADDING_CLASS}`
+                                ? 'px-4 sm:px-8 md:px-12 2xl:px-16 3xl:px-24 4xl:px-32 pt-20 md:pt-24 2xl:pt-32 pb-16 2xl:pb-24'
+                                : `px-5 sm:px-8 2xl:px-16 3xl:px-24 4xl:px-32 max-lg:pt-24 max-lg:pb-12 lg:pt-28 lg:pb-12 2xl:pb-20 3xl:pb-28 4xl:pb-36 ${MAIN_LAYOUT_PADDING_CLASS}`
                             }
                         `}
               >
-                <div ref={containerRef} className="w-full transform-gpu">
+                <div ref={containerRef} className="w-full">
                   {children}
                 </div>
               </div>
             </main>
           </div>
 
-          <Footer />
+          {useInstitutionalChrome ? (
+            <InstitutionalFooter
+              onOpenLogin={() => router.push('/login')}
+              onOpenRegister={() => router.push('/cadastro')}
+              onOpenSearch={() => setIsCommandPaletteOpen(true)}
+            />
+          ) : (
+            <Footer />
+          )}
 
           <Suspense fallback={null}>
             <BackToTopButton />
