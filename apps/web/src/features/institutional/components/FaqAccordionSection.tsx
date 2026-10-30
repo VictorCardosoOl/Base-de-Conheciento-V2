@@ -6,8 +6,6 @@
 import React, { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Plus, Minus, ArrowUpRight, Search, Copy, Check, X, BookOpen } from 'lucide-react';
-import { SplitTextReveal } from './AwwwardsMotion';
-import { SunburstEmblem } from './SunburstEmblem';
 import {
   PREVENCE_FAQ_CATEGORIES,
   PREVENCE_FAQ_ITEMS,
@@ -16,7 +14,7 @@ import {
   toggleFaqAccordionItem,
   formatNormativeCitation,
 } from '../utils/sstCalculations';
-import { useCardSpotlight, useClipboardCopy } from '../hooks/useInteractiveHooks';
+import { useClipboardCopy } from '../hooks/useInteractiveHooks';
 
 interface FaqAccordionSectionProps {
   onOpenCommandPalette: () => void;
@@ -32,7 +30,6 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
   const [openIds, setOpenIds] = useState<string[]>([PREVENCE_FAQ_ITEMS[0].id]);
   const [allowMultiple, setAllowMultiple] = useState<boolean>(false);
 
-  const handleCardSpotlightMove = useCardSpotlight(false);
   const { copiedKey: copiedId, copyText } = useClipboardCopy(2500);
 
   const filteredItems = useMemo(
@@ -88,89 +85,69 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
     void copyText(citation, id);
   };
 
-  const handleClearSearch = () => {
-    setSearchQuery('');
-  };
-
   return (
     <section
       id="faq"
       data-testid="faq-accordion-section"
-      className="relative border-b border-[var(--border-hairline)] mesh-gradient-bento py-24 lg:py-32 2xl:py-40 3xl:py-48 4xl:py-56 overflow-hidden"
+      className="relative border-b border-[var(--border-hairline)] bg-[var(--bg-paper)] py-20 lg:py-28 2xl:py-36 overflow-hidden"
     >
-      {/* Subtle Ambient Orbs for Depth */}
-      <div
-        aria-hidden="true"
-        className="ambient-glass-orb-sage absolute top-12 left-1/2 -translate-x-1/2 w-[540px] h-[540px] rounded-full pointer-events-none opacity-40"
-      />
+      <div className="relative z-10 w-full max-w-4xl 2xl:max-w-5xl mx-auto px-5 sm:px-8 lg:px-12">
+        {/* Editorial Section Header: Clean, Architectural, Aligned */}
+        <div className="space-y-3 mb-10 sm:mb-12">
+          <span className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--accent-editorial)] block">
+            Acervo Consultivo · Pareceres Técnicos
+          </span>
 
-      <div className="relative z-10 w-full max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4xl:max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 2xl:px-16 3xl:px-24 4xl:px-32">
-        {/* =================================================================== */}
-        {/* Centered Editorial Header: Balanced, Elegant & Informative          */}
-        {/* =================================================================== */}
-        <div className="gsap-faq-left text-center space-y-4 mb-10 sm:mb-12">
-          {/* Subtle Archival Emblem & Eyebrow */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--border-hairline)] bg-[var(--bg-glass)] text-[var(--accent-ochre)] text-xs font-medium tracking-widest uppercase">
-            <SunburstEmblem size={18} strokeColor="currentColor" dotColor="currentColor" />
-            <span>Base Normativa &middot; eSocial S-1.3 &middot; NRs</span>
-          </div>
+          <h2 className="font-editorial text-3xl sm:text-4xl 2xl:text-5xl font-normal text-[var(--text-primary)] leading-[1.12]">
+            Perguntas{' '}
+            <span className="italic font-light text-[var(--accent-editorial)]">frequentes.</span>
+          </h2>
 
-          <SplitTextReveal
-            as="h2"
-            text="Perguntas"
-            highlightText="frequentes."
-            className="font-editorial text-4xl sm:text-5xl 2xl:text-6xl font-normal text-[var(--text-primary)] leading-[1.1]"
-          />
-
-          <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-2xl">
             Orientações objetivas fundamentadas na legislação previdenciária, nas Normas
-            Regulamentadoras e no Manual de Orientação do eSocial (S-1.3).
+            Regulamentadoras e no Manual de Orientação do eSocial (versão S-1.3).
           </p>
         </div>
 
-        {/* =================================================================== */}
-        {/* Usability & Navigation Bar: Live Search + Command Palette Shortcut  */}
-        {/* =================================================================== */}
-        <div className="mb-8 space-y-4">
-          <div className="relative max-w-2xl mx-auto flex items-center">
+        {/* Search Bar & Command Palette Shortcut */}
+        <div className="mb-6 space-y-4">
+          <div className="relative flex items-center">
             <Search className="absolute left-4 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar dúvida, norma (ex: NR-15, S-2240, ruído, insalubridade)..."
+              placeholder="Buscar dúvida ou norma (ex: NR-15, S-2240, ruído, insalubridade)..."
               aria-label="Pesquisar perguntas frequentes"
-              className="w-full min-h-[48px] pl-11 pr-24 rounded-full border border-[var(--border-hairline)] bg-[var(--bg-glass)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-ochre)] focus:ring-1 focus:ring-[var(--accent-ochre)] transition-all shadow-sm"
+              className="w-full h-12 pl-11 pr-24 rounded-xl border border-[var(--border-hairline)] bg-black/[0.02] dark:bg-white/[0.03] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-editorial)] focus:bg-[var(--bg-paper)] transition-all shadow-xs"
             />
             <div className="absolute right-3 flex items-center gap-1.5">
-              {searchQuery ? (
+              {searchQuery && (
                 <button
                   type="button"
-                  onClick={handleClearSearch}
+                  onClick={() => setSearchQuery('')}
                   aria-label="Limpar pesquisa"
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
-              ) : null}
+              )}
               <button
                 type="button"
                 onClick={onOpenCommandPalette}
-                title="Abrir índice completo (⌘K)"
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono rounded-full bg-black/5 dark:bg-white/10 border border-[var(--border-hairline)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                title="Abrir índice completo (Ctrl+K)"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono rounded-md bg-black/5 dark:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               >
-                <span>⌘K</span>
+                <span>Ctrl+K</span>
               </button>
             </div>
           </div>
 
-          {/* =================================================================== */}
-          {/* Horizontal Topic Filter Pills: Balanced & Touch-Friendly           */}
-          {/* =================================================================== */}
+          {/* Segmented Category Filter Tabs */}
           <div
             role="tablist"
             aria-label="Filtrar perguntas frequentes por domínio"
-            className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 sm:flex-wrap justify-start sm:justify-center -mx-2 px-2"
+            className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 border-b border-[var(--border-hairline)] pb-2"
           >
             {PREVENCE_FAQ_CATEGORIES.map((cat) => {
               const isActive = activeCategory === cat.id;
@@ -182,17 +159,16 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
                   role="tab"
                   aria-selected={isActive}
                   aria-controls="faq-accordion-list"
-                  onMouseMove={handleCardSpotlightMove}
                   onClick={() => handleCategoryChange(cat.id)}
-                  className={`min-h-[42px] px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer transition-all duration-200 flex items-center gap-2 shrink-0 ${
+                  className={`min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap cursor-pointer transition-all flex items-center gap-2 shrink-0 ${
                     isActive
-                      ? 'bg-[var(--accent-ochre)] text-white shadow-sm font-semibold'
-                      : 'bg-[var(--bg-glass)] border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-ochre)]/40'
+                      ? 'bg-[var(--accent-editorial)] text-white shadow-xs font-semibold'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/[0.03] dark:hover:bg-white/[0.03]'
                   }`}
                 >
                   <span>{cat.label}</span>
                   <span
-                    className={`font-tabular text-[11px] px-2 py-0.5 rounded-full ${
+                    className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
                       isActive
                         ? 'bg-black/20 text-white'
                         : 'bg-black/5 dark:bg-white/10 text-[var(--text-muted)]'
@@ -206,17 +182,15 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
           </div>
         </div>
 
-        {/* =================================================================== */}
-        {/* Accordion Controls Bar: Count & Expand/Collapse Toggle             */}
-        {/* =================================================================== */}
-        <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-[var(--border-hairline)] text-xs text-[var(--text-secondary)]">
-          <div className="flex items-center gap-2">
+        {/* Accordion Count & Expand/Collapse Toggle */}
+        <div className="flex items-center justify-between pb-3 mb-2 text-xs text-[var(--text-secondary)]">
+          <div>
             <span>
               Mostrando <strong className="text-[var(--text-primary)] font-medium">{filteredItems.length}</strong>{' '}
-              {filteredItems.length === 1 ? 'parecer técnico' : 'pareceres técnicos'}
+              {filteredItems.length === 1 ? 'parecer' : 'pareceres'}
             </span>
             {searchQuery && (
-              <span className="text-[var(--accent-ochre)]">
+              <span className="text-[var(--accent-editorial)] ml-1">
                 para &ldquo;{searchQuery}&rdquo;
               </span>
             )}
@@ -233,12 +207,10 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
           )}
         </div>
 
-        {/* =================================================================== */}
-        {/* Accordion Items List: Centered, Harmonious, Tactile Ergonomics     */}
-        {/* =================================================================== */}
-        <div id="faq-accordion-list" className="space-y-3">
+        {/* Accordion Items List: Meticulously Aligned, Editorial Precision */}
+        <div id="faq-accordion-list" className="divide-y divide-[var(--border-hairline)] border-t border-[var(--border-hairline)]">
           {filteredItems.length === 0 ? (
-            <div className="text-center py-12 px-6 rounded-2xl border border-dashed border-[var(--border-hairline)] bg-[var(--bg-glass)] space-y-3">
+            <div className="text-center py-14 px-6 border border-dashed border-[var(--border-hairline)] rounded-xl my-4 space-y-3">
               <BookOpen className="w-8 h-8 mx-auto text-[var(--text-muted)] opacity-60" />
               <p className="text-sm font-medium text-[var(--text-primary)]">
                 Nenhum parecer encontrado para os critérios selecionados.
@@ -252,7 +224,7 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
                   setSearchQuery('');
                   setActiveCategory('todos');
                 }}
-                className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[var(--border-hairline)] text-xs font-medium text-[var(--text-primary)] hover:border-[var(--accent-ochre)] transition-colors cursor-pointer"
+                className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[var(--border-hairline)] text-xs font-medium text-[var(--text-primary)] hover:border-[var(--accent-editorial)] transition-colors cursor-pointer"
               >
                 Limpar filtros de busca
               </button>
@@ -268,64 +240,52 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
                 <div
                   key={item.id}
                   data-testid={`faq-item-${item.indexCode}`}
-                  data-glass-active={isOpen}
-                  onMouseMove={handleCardSpotlightMove}
-                  className="gsap-faq-row rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-glass)] transition-all duration-300 hover:border-[var(--accent-ochre)]/50 shadow-sm overflow-hidden"
+                  className="py-5 sm:py-6 transition-colors"
                 >
-                  <h3>
-                    <button
-                      id={buttonId}
-                      type="button"
-                      aria-expanded={isOpen}
-                      aria-controls={panelId}
-                      onClick={() => handleToggleItem(item.id)}
-                      className="w-full py-5 sm:py-6 px-5 sm:px-7 text-left flex items-start justify-between gap-4 group focus-visible:outline-none cursor-pointer"
-                    >
-                      {/* Left Roman Numeral Tag */}
-                      <div className="flex items-baseline gap-2 w-10 sm:w-12 shrink-0 pt-0.5">
-                        <span
-                          className={`font-editorial text-2xl sm:text-3xl font-light transition-colors ${
-                            isOpen
-                              ? 'text-[var(--accent-ochre)] font-normal'
-                              : 'text-[var(--accent-editorial)]'
-                          }`}
-                        >
-                          {item.roman}.
+                  <button
+                    id={buttonId}
+                    type="button"
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    onClick={() => handleToggleItem(item.id)}
+                    className="w-full text-left flex items-start justify-between gap-4 group focus-visible:outline-none cursor-pointer"
+                  >
+                    <div className="space-y-1.5 flex-1 pr-2">
+                      {/* Technical Meta Strip: Aligned with Question */}
+                      <div className="flex flex-wrap items-center gap-x-2 text-xs font-mono text-[var(--text-muted)]">
+                        <span className="font-semibold text-[var(--accent-editorial)]">
+                          Parecer {item.indexCode}
                         </span>
+                        <span aria-hidden="true">·</span>
+                        <span className="text-[var(--text-secondary)] font-medium">
+                          {item.categoryLabel}
+                        </span>
+                        <span aria-hidden="true">·</span>
+                        <span>{item.normativeRef}</span>
                       </div>
 
-                      {/* Center Metadata & Question Headline */}
-                      <div className="flex-1 space-y-1.5">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)]">
-                          <span className="text-[var(--text-secondary)] font-medium">
-                            {item.categoryLabel}
-                          </span>
-                          <span aria-hidden="true">&middot;</span>
-                          <span>{item.normativeRef}</span>
-                        </div>
+                      {/* Question Headline */}
+                      <h3 className="font-editorial text-xl sm:text-2xl font-normal text-[var(--text-primary)] group-hover:text-[var(--accent-editorial)] transition-colors leading-snug">
+                        {item.question}
+                      </h3>
+                    </div>
 
-                        <div className="font-editorial text-xl sm:text-2xl font-normal text-[var(--text-primary)] leading-snug">
-                          {item.question}
-                        </div>
-                      </div>
-
-                      {/* Right Disclosure Affordance (+/- Pill) */}
-                      <span
-                        aria-hidden="true"
-                        className={`mt-1 w-8 h-8 shrink-0 rounded-full border flex items-center justify-center transition-all duration-200 ${
-                          isOpen
-                            ? 'border-[var(--accent-ochre)] bg-[var(--accent-ochre)] text-white shadow-sm'
-                            : 'border-[var(--border-hairline)] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] group-hover:border-[var(--accent-ochre)]'
-                        }`}
-                      >
-                        {isOpen ? (
-                          <Minus className="w-3.5 h-3.5" />
-                        ) : (
-                          <Plus className="w-3.5 h-3.5" />
-                        )}
-                      </span>
-                    </button>
-                  </h3>
+                    {/* Subtle Disclosure Affordance */}
+                    <span
+                      aria-hidden="true"
+                      className={`mt-1 w-7 h-7 shrink-0 rounded-lg border flex items-center justify-center transition-all duration-200 ${
+                        isOpen
+                          ? 'border-[var(--accent-editorial)] bg-[var(--accent-editorial)] text-white shadow-xs'
+                          : 'border-[var(--border-hairline)] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] group-hover:border-[var(--accent-editorial)]'
+                      }`}
+                    >
+                      {isOpen ? (
+                        <Minus className="w-3.5 h-3.5" />
+                      ) : (
+                        <Plus className="w-3.5 h-3.5" />
+                      )}
+                    </span>
+                  </button>
 
                   <AnimatePresence initial={false}>
                     {isOpen && (
@@ -336,12 +296,12 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                         className="overflow-hidden"
                       >
-                        <div className="pb-6 pt-1 px-5 sm:px-7 sm:pl-16 sm:pr-8 space-y-4">
-                          {/* Editorial Pull-Quote with Ochre Accent */}
-                          <div className="py-3.5 px-4 border-l-2 border-[var(--accent-ochre)] bg-[var(--accent-ochre-muted)]/15 rounded-r-lg my-1">
+                        <div className="pt-4 space-y-4">
+                          {/* Editorial Callout Quote */}
+                          <div className="p-4 border-l-2 border-[var(--accent-editorial)] bg-black/[0.02] dark:bg-white/[0.02] rounded-r-lg">
                             <p className="font-editorial italic text-base sm:text-lg text-[var(--text-primary)] leading-relaxed">
                               &ldquo;{item.editorialPullQuote}&rdquo;
                             </p>
@@ -352,11 +312,11 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
                             {item.answer}
                           </p>
 
-                          {/* Technical Audit Note & Contextual Action */}
-                          <div className="pt-4 border-t border-[var(--border-hairline)] flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-                            <p className="text-xs text-[var(--text-muted)] leading-relaxed max-w-xl">
+                          {/* Practical Engineering Note & Citations */}
+                          <div className="pt-4 border-t border-[var(--border-hairline)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <p className="text-[var(--text-muted)] leading-relaxed max-w-xl">
                               <strong className="text-[var(--text-primary)] font-medium">
-                                Nota prática:{' '}
+                                Nota técnica:{' '}
                               </strong>
                               {item.technicalNote}
                             </p>
@@ -372,12 +332,12 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
                                     item.normativeRef
                                   )
                                 }
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--border-hairline)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-ochre)] transition-colors whitespace-nowrap cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-editorial)] transition-colors whitespace-nowrap cursor-pointer"
                               >
                                 {isCopied ? (
                                   <>
-                                    <Check className="w-3.5 h-3.5 text-[var(--accent-ochre)]" />
-                                    <span className="text-[var(--accent-ochre)] font-medium">Copiado</span>
+                                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                    <span className="text-emerald-700 dark:text-emerald-300 font-medium">Copiado</span>
                                   </>
                                 ) : (
                                   <>
@@ -390,7 +350,7 @@ export const FaqAccordionSection: React.FC<FaqAccordionSectionProps> = ({
                               <a
                                 href={item.actionHref}
                                 onClick={() => handleActionClick(item.category, item.actionHref)}
-                                className="inline-flex items-center gap-1 text-xs font-medium text-[var(--text-primary)] hover:text-[var(--accent-ochre)] underline underline-offset-4 shrink-0 whitespace-nowrap"
+                                className="inline-flex items-center gap-1 font-medium text-[var(--text-primary)] hover:text-[var(--accent-editorial)] underline underline-offset-4 shrink-0 whitespace-nowrap"
                               >
                                 <span>{item.actionLabel}</span>
                                 <ArrowUpRight className="w-3.5 h-3.5" />

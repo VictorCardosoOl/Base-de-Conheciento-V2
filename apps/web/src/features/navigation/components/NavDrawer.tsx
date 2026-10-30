@@ -144,7 +144,10 @@ export function NavDrawer({
                         aria-expanded={isOpen}
                         aria-controls={listId}
                         aria-label={`${isOpen ? 'Ocultar' : 'Ver'} artigos de ${cat}`}
-                        onClick={() => toggleModule(cat)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleModule(cat);
+                        }}
                       >
                         <ChevronRight size={16} aria-hidden="true" />
                       </button>
@@ -194,22 +197,34 @@ export function NavDrawer({
           </p>
           <ul className="space-y-0.5">
             <li {...stagger()}>
-              <button type="button" className="nav-shortcut" onClick={onSelectQueue}>
+              <button
+                type="button"
+                className="nav-shortcut"
+                onClick={onSelectQueue}
+              >
                 <Bookmark size={17} aria-hidden="true" />
                 <span className="flex-1">Minha Lista</span>
                 {queueCount > 0 && <span className="nav-count">{queueCount}</span>}
               </button>
             </li>
             <li {...stagger()}>
-              <button type="button" className="nav-shortcut" onClick={onOpenAbout}>
+              <button
+                type="button"
+                className="nav-shortcut"
+                onClick={onOpenAbout}
+              >
                 <Info size={17} aria-hidden="true" />
-                Sobre o Projeto
+                <span className="flex-1">Sobre o Projeto</span>
               </button>
             </li>
             <li {...stagger()}>
-              <button type="button" className="nav-shortcut" onClick={onOpenPrivacy}>
+              <button
+                type="button"
+                className="nav-shortcut"
+                onClick={onOpenPrivacy}
+              >
                 <ShieldCheck size={17} aria-hidden="true" />
-                LGPD e privacidade
+                <span className="flex-1">LGPD e privacidade</span>
               </button>
             </li>
           </ul>

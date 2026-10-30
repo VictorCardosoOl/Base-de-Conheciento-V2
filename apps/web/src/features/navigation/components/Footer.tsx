@@ -50,10 +50,10 @@ export const Footer = () => {
 
   return (
     <footer className="relative z-10 w-full text-text-body font-sans px-5 sm:px-8 2xl:px-16 3xl:px-24 4xl:px-32 pb-20 sm:pb-8 pt-12 2xl:pt-16 3xl:pt-24 4xl:pt-32">
-      <div className="glass-card max-w-[2000px] 3xl:max-w-[2240px] 4xl:max-w-[2560px] mx-auto !rounded-[2rem] 3xl:!rounded-[2.5rem] p-6 sm:p-8 lg:p-10 2xl:p-12 3xl:p-16 shadow-[var(--glass-shadow-2)]">
+      <div className="glass-card max-w-[2000px] 3xl:max-w-[2240px] 4xl:max-w-[2560px] mx-auto rounded-lg p-6 sm:p-8 lg:p-10 2xl:p-12 3xl:p-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-6">
           <div className="sm:col-span-2 lg:col-span-4 flex flex-col gap-5">
-            <Link href="/" aria-label="Base SST — início" className="self-start rounded-md glass-focus">
+            <Link href="/" aria-label="Base SST - início" className="self-start rounded-md glass-focus">
               <Logo />
             </Link>
             <p className="text-sm text-text-muted max-w-sm leading-relaxed">

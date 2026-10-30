@@ -44,30 +44,32 @@ export const SplitTextReveal: React.FC<SplitTextRevealProps> = ({
     <Tag aria-label={fullAccessibleText} className={className}>
       <span aria-hidden="true" className="inline">
         {wordTokens.map((wordObj, wIdx) => (
-          <span
-            key={`word-${wIdx}`}
-            data-split-word={wordObj.word}
-            className={`inline-block whitespace-nowrap mr-[0.26em] ${
-              wordObj.isHighlight
-                ? `${highlightClassName} text-[var(--accent-editorial)]`
-                : ''
-            }`}
-          >
-            {wordObj.chars.map((charObj) => (
-              <span
-                key={`char-${charObj.globalIndex}`}
-                className="inline-block overflow-visible align-baseline"
-              >
+          <React.Fragment key={`word-${wIdx}`}>
+            <span
+              data-split-word={wordObj.word}
+              className={`inline-block whitespace-nowrap ${
+                wordObj.isHighlight
+                  ? `${highlightClassName} text-[var(--accent-editorial)]`
+                  : ''
+              }`}
+            >
+              {wordObj.chars.map((charObj) => (
                 <span
-                  data-split-char={charObj.char}
-                  data-stagger-delay={(delay + charObj.globalIndex * charStagger).toFixed(3)}
-                  className="inline-block"
+                  key={`char-${charObj.globalIndex}`}
+                  className="inline-block overflow-visible align-baseline"
                 >
-                  {charObj.char}
+                  <span
+                    data-split-char={charObj.char}
+                    data-stagger-delay={(delay + charObj.globalIndex * charStagger).toFixed(3)}
+                    className="inline-block"
+                  >
+                    {charObj.char}
+                  </span>
                 </span>
-              </span>
-            ))}
-          </span>
+              ))}
+            </span>
+            {wIdx < wordTokens.length - 1 && ' '}
+          </React.Fragment>
         ))}
       </span>
     </Tag>

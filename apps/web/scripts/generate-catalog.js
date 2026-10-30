@@ -58,8 +58,9 @@ async function generateCatalog() {
     const { data, content } = matter(fileContent.trimStart());
 
     const fileId = data.id || path.basename(filePath, '.md');
-    const question =
+    const rawQuestion =
       data.question || data.title || path.basename(filePath, '.md');
+    const question = String(rawQuestion).replace(/_/g, ' ').trim();
 
     // Blocos de código saem primeiro para não serem parcialmente consumidos pelos regex inline
     const plainText = content
@@ -79,8 +80,24 @@ async function generateCatalog() {
       );
     }
     seenIds.set(sanitizedId, filePath);
+
+    let cleanSummarySource = plainText;
+    if (
+      question &&
+      cleanSummarySource.toLowerCase().startsWith(question.toLowerCase())
+    ) {
+      cleanSummarySource = cleanSummarySource
+        .slice(question.length)
+        .replace(/^[\s.:;-]+/, '')
+        .trim();
+    }
     const excerpt =
-      plainText.substring(0, 160).trim() + (plainText.length > 160 ? '...' : '');
+      cleanSummarySource.substring(0, 160).trim() +
+      (cleanSummarySource.length > 160 ? '...' : '');
+    const rawAnswer = data.answer ? String(data.answer).trim() : '';
+    const isGenericImport =
+      !rawAnswer ||
+      rawAnswer.toLowerCase() === 'artigo importado automaticamente.';
 
     catalog.push({
       ...data,
@@ -88,7 +105,7 @@ async function generateCatalog() {
       question,
       excerpt,
       searchText: plainText,
-      answer: data.answer || excerpt,
+      answer: isGenericImport ? excerpt : rawAnswer,
       category: data.category || 'Geral',
     });
 

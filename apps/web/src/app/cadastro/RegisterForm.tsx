@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import Link from 'next/link';
-import { Eye, EyeOff, AlertCircle, ShieldCheck, ArrowRight, Clock } from 'lucide-react';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+import { Eye, EyeOff, AlertCircle, ShieldCheck, ArrowRight } from 'lucide-react';
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -87,52 +87,13 @@ export function RegisterForm({
     <AuthSplitLayout>
       <div className="w-full space-y-5">
         {/* Cabeçalho Minimalista Sem Bordas */}
-        <div className="space-y-3.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-2.5">
-              <span
-                aria-hidden="true"
-                className="w-7 h-7 rounded-md bg-[#B27E29]/15 flex items-center justify-center text-[#B27E29] text-xs font-serif"
-              >
-                ✦
-              </span>
-              <div className="leading-tight">
-                <span className="block text-xs font-semibold tracking-tight text-[var(--text-primary)]">
-                  Base de Conhecimento™
-                </span>
-                <span className="block text-[11px] text-[var(--text-muted)]">
-                  Credenciamento Técnico SST &amp; eSocial
-                </span>
-              </div>
-            </div>
-
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-3 py-1.5 rounded-full bg-[#ECE9E2]/70 dark:bg-white/[0.05] hover:bg-[#ECE9E2] dark:hover:bg-white/[0.1]"
-            >
-              <span>← Início</span>
-            </Link>
-          </div>
-
-          <div className="pt-1 space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-tabular uppercase tracking-[0.12em] text-[var(--accent-editorial)] inline-flex items-center gap-1">
-                <Clock size={12} aria-hidden="true" />
-                Cadastro em 30 Segundos
-              </span>
-              <span className="text-[var(--text-muted)] text-xs">·</span>
-              <span className="text-[11px] font-tabular text-[var(--text-muted)]">
-                Apenas o essencial
-              </span>
-            </div>
-
-            <h1 className="font-editorial text-3xl sm:text-[2.35rem] font-normal tracking-tight text-[var(--text-primary)] leading-[1.08]">
-              Criar sua conta corporativa.
-            </h1>
-            <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-              Acesse gratuitamente os cadernos normativos, checklists operacionais do eSocial e listas de leitura.
-            </p>
-          </div>
+        <div className="space-y-2">
+          <h1 className="font-editorial text-4xl sm:text-[2.6rem] font-normal tracking-tight text-[var(--text-primary)] leading-[1.08]">
+            Criar sua conta corporativa.
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+            Acesse gratuitamente os cadernos normativos, checklists operacionais do eSocial e listas de leitura.
+          </p>
         </div>
 
         <SocialLoginButtons next={next} mode="signup" />

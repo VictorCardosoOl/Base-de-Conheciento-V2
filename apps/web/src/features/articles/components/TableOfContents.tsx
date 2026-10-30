@@ -1,10 +1,25 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { ListFilter } from 'lucide-react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 
 export interface TocItem {
   id: string;
   text: string;
-  level: number; // 2 para h2, 3 para h3
+  level: number; // 2 para h2/subtítulo editorial, 3 para h3
+}
+
+export interface NumberedTocItem extends TocItem {
+  indexStr: string | null;
+}
+
+function getNumberedTocItems(items: TocItem[]): NumberedTocItem[] {
+  let counter = 0;
+  return items.map((item) => {
+    const isMain = item.level === 2;
+    if (isMain) counter += 1;
+    return {
+      ...item,
+      indexStr: isMain ? String(counter).padStart(2, '0') : null,
+    };
+  });
 }
 
 interface TableOfContentsProps {
@@ -26,8 +41,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
   const navRef = useRef<HTMLElement>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);
 
-  // 1. Cabeçalhos do corpo do artigo. O corpo chega depois (import dinâmico, conteúdo
-  //    carregado sob demanda): reexamina quando o conteúdo muda, com um pequeno atraso.
+  // 1. Cabeçalhos do corpo do artigo (h2, h3 e subtítulos editoriais promovidos).
   useEffect(() => {
     const scope = (contentRef ?? containerRef).current;
     if (!scope) return;
@@ -35,24 +49,32 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
     const scan = () => {
       const tocItems: TocItem[] = [];
-      scope.querySelectorAll('h2, h3').forEach((heading, idx) => {
-        let id = heading.id;
-        if (!id) {
-          id = `toc-${idx}-${
-            heading.textContent
-              ?.toLowerCase()
-              .replace(/[^a-z0-9]/g, '-')
-              .replace(/-+/g, '-') || idx
-          }`;
-          heading.id = id;
-        }
-        tocItems.push({
-          id,
-          text: heading.textContent || `Seção ${idx + 1}`,
-          level: heading.tagName.toLowerCase() === 'h2' ? 2 : 3,
+      scope
+        .querySelectorAll('h2, h3, [data-editorial-heading="true"]')
+        .forEach((heading, idx) => {
+          const text = (heading.textContent || '').trim();
+          if (!text) return;
+          let id = heading.id;
+          if (!id) {
+            id = `toc-${idx}-${
+              text
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '') || idx
+            }`;
+            heading.id = id;
+          }
+          const tag = heading.tagName.toLowerCase();
+          tocItems.push({
+            id,
+            text,
+            level: tag === 'h3' ? 3 : 2,
+          });
         });
-      });
-      // Mesmo índice de antes: não re-renderiza.
+
       setItems((prev) =>
         prev.length === tocItems.length && prev.every((item, i) => item.id === tocItems[i].id)
           ? prev
@@ -62,13 +84,17 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     };
     const schedule = () => {
       window.clearTimeout(timer);
-      timer = window.setTimeout(scan, 80);
+      timer = window.setTimeout(scan, 90);
     };
 
     schedule();
-    // Só a árvore do artigo, só inserções/remoções (o id que o scan grava não dispara).
     const observer = new MutationObserver(schedule);
-    observer.observe(scope, { childList: true, subtree: true });
+    observer.observe(scope, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-editorial-heading'],
+    });
     return () => {
       window.clearTimeout(timer);
       observer.disconnect();
@@ -96,14 +122,14 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     );
 
     items.forEach((item) => {
-      const el = container.querySelector(`#${item.id}`);
+      const el = container.querySelector(`#${CSS.escape(item.id)}`);
       if (el) observer.observe(el);
     });
 
     return () => observer.disconnect();
   }, [items, containerRef, scrollRoot]);
 
-  // Indicador de vidro que desliza até o item ativo.
+  // Indicador arquitetural no trilho lateral
   useEffect(() => {
     const nav = navRef.current;
     if (!nav || !activeId) return;
@@ -121,45 +147,74 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     const container = containerRef.current;
     if (!container) return;
 
-    const target = container.querySelector(`#${id}`);
+    const target = container.querySelector(`#${CSS.escape(id)}`);
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       setActiveId(id);
     }
   };
 
+  const numberedItems = useMemo(() => getNumberedTocItems(items), [items]);
+
   if (items.length < 2) return null;
 
   return (
-    <aside className="sticky top-24 p-2 text-xs border-l border-border pl-6" aria-label="Neste artigo">
-      <div className="flex items-center gap-2 pb-3 mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted font-mono">
-        <ListFilter size={13} className="text-text-main" aria-hidden="true" />
-        <span>Neste Artigo</span>
+    <aside
+      className="sticky top-28 text-xs"
+      aria-label="Neste artigo"
+    >
+      <div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--border-hairline)]">
+        <span className="text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          Sumário do Documento
+        </span>
+        <span className="text-[10px] font-mono tabular-nums text-[var(--text-muted)]">
+          {String(items.length).padStart(2, '0')} seções
+        </span>
       </div>
 
-      <nav ref={navRef} className="relative space-y-1 max-h-[65vh] overflow-y-auto no-scrollbar">
+      <nav
+        ref={navRef}
+        className="relative border-l border-[var(--border-hairline)] max-h-[68vh] overflow-y-auto no-scrollbar"
+      >
         <span
           ref={indicatorRef}
           aria-hidden="true"
-          className="absolute top-0 left-0 right-0 h-0 opacity-0 rounded-[20px] bg-black/5 dark:bg-white/10 shadow-xs transition-[transform,height,opacity] duration-300 ease-[var(--ease-elastic)] motion-reduce:transition-none"
-        >
-          <span className="absolute left-1.5 top-2.5 bottom-2.5 w-[3px] rounded-full bg-text-main" />
-        </span>
-        {items.map((item) => {
+          className="
+            absolute top-0 -left-[1px] w-[2px] h-0 opacity-0
+            bg-[var(--accent-editorial)]
+            transition-[transform,height,opacity] duration-200 ease-out
+            motion-reduce:transition-none
+          "
+        />
+        {numberedItems.map((item) => {
           const isActive = activeId === item.id;
+          const { indexStr } = item;
+
           return (
             <button
               key={item.id}
+              type="button"
               data-toc-id={item.id}
               onClick={() => scrollToHeading(item.id)}
               aria-current={isActive ? 'location' : undefined}
-              className={`relative block w-full text-left rounded-[20px] py-2 pr-2 transition-colors duration-200 glass-focus ${
-                item.level === 3 ? 'pl-7 text-[11px]' : 'pl-4 font-medium text-xs'
+              className={`group relative flex items-baseline gap-2.5 w-full text-left py-2 pr-2 transition-colors duration-150 focus-visible:outline-none focus-visible:bg-[var(--bg-paper-warm)] ${
+                item.level === 3 ? 'pl-7 text-[11.5px]' : 'pl-4 text-xs'
               } ${
-                isActive ? 'text-text-main font-semibold' : 'text-text-muted hover:text-text-main'
+                isActive
+                  ? 'text-[var(--text-main)] font-medium bg-[var(--bg-paper-warm)]/60'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
               }`}
             >
-              <span className="line-clamp-2 leading-relaxed">{item.text}</span>
+              {indexStr && (
+                <span
+                  className={`font-mono text-[10px] tabular-nums shrink-0 ${
+                    isActive ? 'text-[var(--accent-editorial)] font-semibold' : 'opacity-55'
+                  }`}
+                >
+                  {indexStr}
+                </span>
+              )}
+              <span className="line-clamp-2 leading-snug">{item.text}</span>
             </button>
           );
         })}
@@ -167,3 +222,4 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     </aside>
   );
 };
+

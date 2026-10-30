@@ -14,8 +14,8 @@
     justify-content: center;
     gap: 0.5rem;
     min-height: var(--control-h);
-    padding: 0.45rem 1rem;
-    border-radius: var(--glass-radius-md, 6px);
+    padding: 0.45rem 1.15rem;
+    border-radius: 9999px;
     font-size: 0.875rem;
     font-weight: 500;
     line-height: 1.2;

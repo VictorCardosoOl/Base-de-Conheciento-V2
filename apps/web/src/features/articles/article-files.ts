@@ -66,8 +66,12 @@ function readCatalogFromDisk(): ArticleFile[] {
     const { data, content } = matter(fileContent.trimStart());
 
     const fileId = data.id || path.basename(filePath, '.md');
-    const question =
+    const rawQuestion =
       data.question || data.title || path.basename(filePath, '.md');
+    const question =
+      typeof rawQuestion === 'string' && rawQuestion.includes('_')
+        ? rawQuestion.replace(/_/g, ' ').replace(/\s+/g, ' ').trim()
+        : rawQuestion;
 
     const plainText = content
       .replace(/```[\s\S]*?```/g, ' ')
@@ -78,9 +82,27 @@ function readCatalogFromDisk(): ArticleFile[] {
       .trim();
 
     const sanitizedId = path.basename(fileId).replace(/[^a-zA-Z0-9_-]/g, '');
+
+    let cleanedBody = plainText
+      .replace(/^[#=*-\s]+/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    for (const prefix of [String(rawQuestion || ''), String(question || '')]) {
+      if (prefix && cleanedBody.toLowerCase().startsWith(prefix.toLowerCase())) {
+        cleanedBody = cleanedBody.slice(prefix.length).replace(/^[\s:=\-–—]+/, '').trim();
+      }
+    }
+    cleanedBody = cleanedBody.replace(/^[A-Za-zÀ-ÿ0-9\s()/,-]{3,70}==+\s*/, '').trim();
+
+    const summarySource = cleanedBody || plainText;
     const excerpt =
-      plainText.substring(0, 160).trim() +
-      (plainText.length > 160 ? '...' : '');
+      summarySource.substring(0, 162).trim() +
+      (summarySource.length > 162 ? '...' : '');
+
+    const rawAnswer = typeof data.answer === 'string' ? data.answer.trim() : '';
+    const isAutoImportPlaceholder = rawAnswer
+      .toLowerCase()
+      .includes('artigo importado automaticamente');
 
     catalog.push({
       ...data,
@@ -89,7 +111,7 @@ function readCatalogFromDisk(): ArticleFile[] {
       content,
       excerpt,
       searchText: plainText,
-      answer: data.answer || excerpt,
+      answer: rawAnswer && !isAutoImportPlaceholder ? rawAnswer : excerpt,
       category: data.category || 'Geral',
     } as ArticleFile);
   });

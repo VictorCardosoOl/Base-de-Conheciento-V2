@@ -1,8 +1,9 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, Check, Plus } from 'lucide-react';
+import { ArrowUpRight, Bookmark, BookmarkCheck, Clock } from 'lucide-react';
 import type { FAQItem } from '@/features/articles/types';
+import { readingMinutes } from '@/features/articles/article-meta';
 import { useReadingQueue } from '@/features/reading/use-reading-queue';
 
 interface CardItemProps {
@@ -15,20 +16,25 @@ interface CardItemProps {
 }
 
 export const CardItem: React.FC<CardItemProps> = ({ item, onClick, isInQueue, onToggleQueue, index = 0 }) => {
+  const minutes = readingMinutes(item.searchText);
+
   return (
     <article
       style={{ '--enter-index': index } as React.CSSProperties}
-      className="group relative flex h-full flex-col justify-between gap-5 p-6 sm:p-7 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] hover:border-[var(--border)] transition-colors duration-150 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-[var(--accent-editorial)]"
+      className="group relative flex h-full flex-col justify-between gap-5 p-6 sm:p-7 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] hover:border-[#1C4E46]/60 dark:hover:border-[#68B2A0]/60 hover:shadow-md transition-all duration-200 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-[var(--accent-editorial)]"
     >
       <div className="flex flex-col gap-3.5">
-        {/* Top Header: Category Tag & Save Bookmark Button */}
+        {/* Cabeçalho do Card: Módulo, Data e Marcador */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2.5 text-[11px] font-mono uppercase tracking-wider">
-            <span className="inline-flex items-center rounded px-2 py-0.5 font-medium text-[var(--text-secondary)] bg-[var(--bg-elevated)] border border-[var(--border-hairline)]">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-mono uppercase tracking-wider font-semibold text-[#1C4E46] dark:text-[#8CD1BE] bg-[#1C4E46]/8 dark:bg-[#8CD1BE]/10 border border-[#1C4E46]/15 dark:border-[#8CD1BE]/20">
               {item.category}
             </span>
-            <span className="truncate text-[11px] text-[var(--text-muted)]">{item.date}</span>
+            <span className="text-[11px] font-mono text-[var(--text-muted)] tabular-nums truncate">
+              {item.lastReviewed || item.date}
+            </span>
           </div>
+
           <button
             type="button"
             onClick={(e) => {
@@ -42,18 +48,23 @@ export const CardItem: React.FC<CardItemProps> = ({ item, onClick, isInQueue, on
                 : `Salvar "${item.question}" na lista de leitura`
             }
             aria-pressed={isInQueue}
-            className={`relative z-10 shrink-0 rounded-md p-1.5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-editorial)] ${
+            title={isInQueue ? 'Salvo na sua lista de leitura' : 'Salvar na sua lista de leitura'}
+            className={`relative z-10 shrink-0 rounded-full p-2 transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-editorial)] focus-visible:opacity-100 [@media(hover:none)]:opacity-100 ${
               isInQueue
-                ? 'bg-[var(--accent-editorial)] text-white'
-                : 'text-[var(--text-muted)] hover:bg-[var(--bg-paper-warm)] hover:text-[var(--text-main)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100'
+                ? 'bg-[#1C4E46] text-white shadow-xs'
+                : 'text-[var(--text-muted)] hover:bg-[var(--bg-paper-warm)] hover:text-[var(--text-main)] opacity-0 group-hover:opacity-100'
             }`}
           >
-            {isInQueue ? <Check size={15} aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}
+            {isInQueue ? (
+              <BookmarkCheck size={16} aria-hidden="true" className="text-white" />
+            ) : (
+              <Bookmark size={16} aria-hidden="true" />
+            )}
           </button>
         </div>
 
-        {/* Title with Editorial Serif */}
-        <h3 className="font-serif text-[1.35rem] sm:text-[1.5rem] font-medium leading-[1.22] tracking-tight text-[var(--text-main)] group-hover:text-[var(--accent-editorial)] transition-colors duration-150">
+        {/* Título com Serif Editorial */}
+        <h3 className="font-editorial text-[1.3rem] sm:text-[1.42rem] font-medium leading-[1.24] tracking-tight text-[var(--text-main)] group-hover:text-[#1C4E46] dark:group-hover:text-[#8CD1BE] transition-colors duration-150">
           <Link
             href={`/artigo/${item.id}`}
             scroll={false}
@@ -64,25 +75,30 @@ export const CardItem: React.FC<CardItemProps> = ({ item, onClick, isInQueue, on
           </Link>
         </h3>
 
-        {/* Answer Snippet */}
-        <p className="line-clamp-3 text-[0.875rem] leading-relaxed text-[var(--text-secondary)] font-normal">{item.answer}</p>
+        {/* Resumo Técnico / Síntese */}
+        <p className="line-clamp-3 text-[13.5px] leading-relaxed text-[var(--text-secondary)] font-normal">
+          {item.answer}
+        </p>
       </div>
 
-      {/* Footer with Action CTA */}
-      <div className="pt-3 border-t border-[var(--border-hairline)] flex items-center justify-between text-xs font-mono uppercase tracking-wider text-[var(--text-muted)]">
+      {/* Rodapé do Card com Ação de Acesso */}
+      <div className="pt-4 border-t border-[var(--border-hairline)] flex items-center justify-between text-xs text-[var(--text-muted)]">
         <span
           aria-hidden="true"
-          className="inline-flex items-center gap-1.5 font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-editorial)] transition-colors duration-150"
+          className="inline-flex items-center gap-1.5 font-medium text-[var(--text-primary)] group-hover:text-[#1C4E46] dark:group-hover:text-[#8CD1BE] transition-colors duration-150"
         >
-          <span>Ler artigo</span>
+          <span>Acessar dossiê técnico</span>
           <ArrowUpRight
             size={14}
             className="transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
           />
         </span>
-        <span className="text-[11px] text-[var(--text-muted)]/80">
-          Documento verificado
-        </span>
+        {minutes ? (
+          <span className="inline-flex items-center gap-1 text-[11px] font-mono text-[var(--text-muted)] tabular-nums">
+            <Clock size={12} aria-hidden="true" />
+            <span>{minutes} min</span>
+          </span>
+        ) : null}
       </div>
     </article>
   );
@@ -99,7 +115,7 @@ export const ArticleGrid = ({
 
   return (
     <div className="relative">
-      <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-5 2xl:grid-cols-3" role="list">
+      <ul className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:gap-6 2xl:grid-cols-3" role="list">
         {items.map((item, idx) => (
           <li
             key={item.id}

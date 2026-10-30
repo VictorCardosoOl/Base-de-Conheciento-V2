@@ -4,6 +4,7 @@ export interface TypographyPreferences {
   fontSize: 'sm' | 'base' | 'lg' | 'xl';
   lineHeight: 'tight' | 'normal' | 'relaxed' | 'loose';
   fontFamily: 'serif' | 'sans' | 'dyslexic';
+  measure?: 'narrow' | 'comfortable' | 'wide';
 }
 
 export interface ReadingGoal {

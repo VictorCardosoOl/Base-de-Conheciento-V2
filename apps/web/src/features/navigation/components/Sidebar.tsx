@@ -83,7 +83,7 @@ export function Sidebar({
   };
 
   return (
-    <>
+    <Suspense fallback={null}>
       <AppHeader
         drawerId={DRAWER_ID}
         drawerOpen={open}
@@ -97,10 +97,14 @@ export function Sidebar({
           close();
           onLogoClick?.();
         }}
+        currentCategory={currentCat}
+        onSelectCategory={(cat) => {
+          onSelect(cat);
+          close();
+        }}
         accountSlot={<AccountMenu session={session} />}
       />
       {/* useSearchParams: só o menu espera a URL no cliente, não a página inteira. */}
-      <Suspense fallback={null}>
       <NavDrawer
         id={DRAWER_ID}
         open={open}
@@ -125,7 +129,6 @@ export function Sidebar({
         }}
         onClose={() => close()}
       />
-      </Suspense>
-    </>
+    </Suspense>
   );
 }

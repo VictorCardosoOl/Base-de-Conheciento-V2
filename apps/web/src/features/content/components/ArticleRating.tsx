@@ -164,7 +164,7 @@ export function ArticleRating({
               ))}
             </div>
             <p className="mt-1 min-h-5 text-sm text-text-muted" aria-live="polite">
-              {status || (hover ? LABELS[hover - 1] : mine ? `Sua nota: ${mine} — ${LABELS[mine - 1]}` : 'Escolha de 1 a 5 estrelas.')}
+              {status || (hover ? LABELS[hover - 1] : mine ? `Sua nota: ${mine} - ${LABELS[mine - 1]}` : 'Escolha de 1 a 5 estrelas.')}
             </p>
             {mine !== null && (
               <Button size="sm" variant="ghost" className="mt-1 -ml-2" onClick={clear}>

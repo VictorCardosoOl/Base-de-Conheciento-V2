@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { HomeGrid } from '@/features/articles/components/HomeGrid';
 
@@ -18,7 +18,9 @@ export default async function ArtigosPage(props: {
   return (
     <div className="w-full">
       <div className="mt-4">
-        <HomeGrid categoryParam={categoryParam} />
+        <Suspense fallback={<div className="min-h-[400px] flex items-center justify-center text-xs font-mono text-[var(--text-muted)]">Carregando acervo técnico...</div>}>
+          <HomeGrid categoryParam={categoryParam} />
+        </Suspense>
       </div>
     </div>
   );

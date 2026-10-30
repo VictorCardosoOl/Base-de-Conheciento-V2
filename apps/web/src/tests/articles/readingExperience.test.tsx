@@ -35,13 +35,11 @@ describe('anterior/próximo no mesmo módulo', () => {
 });
 
 describe('seleção de artigos (página inicial)', () => {
-  it('título, contagem e pílulas de módulo com o atual marcado', () => {
+  it('título, contagem e listagem filtrada pelo módulo ativo', () => {
     render(<HomeGrid categoryParam="eSocial" />);
     expect(screen.getByRole('heading', { level: 1, name: 'Base de Conhecimento' })).toBeTruthy();
     expect(screen.getByText('3 artigos em eSocial')).toBeTruthy();
-    const modulos = screen.getByRole('navigation', { name: 'Módulos' });
-    const atual = modulos.querySelector('[aria-current="page"]')!;
-    expect(atual.textContent).toContain('eSocial');
+    expect(screen.getByRole('button', { name: /Ver todos/i })).toBeTruthy();
     expect(screen.getAllByRole('article')).toHaveLength(3);
     // O card abre o artigo por um link de verdade (teclado e prefetch).
     expect(screen.getByRole('link', { name: 'Primeiro' }).getAttribute('href')).toBe('/artigo/a');

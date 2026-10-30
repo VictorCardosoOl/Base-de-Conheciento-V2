@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 
 const nav = vi.hoisted(() => ({
@@ -143,17 +143,25 @@ describe('AppHeader', () => {
     accountSlot: null,
   };
 
-  it('botão do menu com nome e estado; tema e lista com rótulos da ação', () => {
+  it('exibe os módulos no PillNav à esquerda; tema e lista com rótulos da ação', () => {
     const { rerender } = render(<AppHeader {...base} drawerOpen={false} toggleRef={createRef()} />);
-    const toggle = screen.getByRole('button', { name: 'Abrir menu' });
-    expect(toggle.getAttribute('aria-controls')).toBe('nav-drawer');
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('button', { name: 'Abrir menu' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Catálogo' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('link', { name: 'GRO & PGR' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Ativar modo escuro' }).getAttribute('aria-pressed')).toBe('false');
     expect(screen.getByRole('link', { name: 'Minha Lista (2 itens salvos)' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Início' }).getAttribute('href')).toBe('/');
 
-    rerender(<AppHeader {...base} drawerOpen isDarkMode toggleRef={createRef()} />);
-    expect(screen.getByRole('button', { name: 'Fechar menu' }).getAttribute('aria-expanded')).toBe('true');
+    rerender(
+      <AppHeader
+        {...base}
+        drawerOpen={false}
+        isDarkMode
+        currentCategory={Category.GRO}
+        toggleRef={createRef()}
+      />
+    );
+    expect(screen.getByRole('link', { name: 'GRO & PGR' }).getAttribute('aria-current')).toBe('page');
     expect(screen.getByRole('button', { name: 'Ativar modo claro' }).getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -178,7 +186,7 @@ describe('AppHeader', () => {
   });
 });
 
-describe('Sidebar (cabeçalho + menu)', () => {
+describe('Sidebar (cabeçalho PillNav)', () => {
   const props = {
     currentCat: null,
     onSelect: vi.fn(),
@@ -187,28 +195,20 @@ describe('Sidebar (cabeçalho + menu)', () => {
     onSelectQueue: vi.fn(),
   };
 
-  it('abre pelo botão; Esc fecha e devolve o foco ao botão', async () => {
+  it('selecionar um módulo no PillNav aciona o filtro correspondente', () => {
     render(<Sidebar {...props} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir menu' }));
-    expect(document.getElementById('nav-drawer')!.hasAttribute('data-open')).toBe(true);
-    await waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Filtrar por módulo GRO' }))
-    );
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(document.getElementById('nav-drawer')!.hasAttribute('data-open')).toBe(false);
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Abrir menu' }));
+    fireEvent.click(screen.getByRole('link', { name: 'GRO & PGR' }));
+    expect(props.onSelect).toHaveBeenCalledWith(Category.GRO);
+
+    fireEvent.click(screen.getByRole('link', { name: 'eSocial' }));
+    expect(props.onSelect).toHaveBeenCalledWith(Category.ESOCIAL);
   });
 
-  it('escolher um módulo filtra e fecha; LGPD e privacidade abre os Termos de Uso (entrada dos documentos)', () => {
+  it('sincroniza o módulo ativo no PillNav a partir da query string da URL', () => {
+    nav.search = new URLSearchParams({ category: 'GRO' });
     render(<Sidebar {...props} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Filtrar por módulo GRO' }));
-    expect(props.onSelect).toHaveBeenCalledWith(Category.GRO);
-    expect(document.getElementById('nav-drawer')!.hasAttribute('data-open')).toBe(false);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'LGPD e privacidade' }));
-    expect(nav.push).toHaveBeenCalledWith('/termos');
+    expect(screen.getByRole('link', { name: 'GRO & PGR' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('link', { name: 'Catálogo' }).getAttribute('aria-current')).toBeNull();
   });
 
   it('alertas sem suporte do navegador: avisa', async () => {

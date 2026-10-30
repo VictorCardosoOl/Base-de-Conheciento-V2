@@ -148,6 +148,15 @@ export const InstitutionalLandingPage: React.FC = () => {
         window.location.hash
       );
       setRouteState(nextRoute);
+      if (window.location.hash && window.location.hash !== '#hero') {
+        const id = window.location.hash.slice(1);
+        window.setTimeout(() => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 120);
+      }
     };
     syncRouteFromLocation();
 
@@ -1333,7 +1342,7 @@ export const InstitutionalLandingPage: React.FC = () => {
         <section
           id="modulos"
           data-gsap-archetype={SECTION_GSAP_CHOREOGRAPHIES.modulos.archetype}
-          className="relative border-b border-[var(--border-hairline)] mesh-gradient-bento pt-28 lg:pt-40 2xl:pt-48 3xl:pt-60 4xl:pt-72 pb-24 lg:pb-36 2xl:pb-48 3xl:pb-56 4xl:pb-64"
+          className="relative border-b border-[var(--border-hairline)] mesh-gradient-bento pt-28 lg:pt-40 2xl:pt-48 3xl:pt-60 4xl:pt-72 pb-10 lg:pb-14"
         >
           {/* Ambient Chromatic Orbs for Frosted Glass Refraction */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -1446,7 +1455,7 @@ export const InstitutionalLandingPage: React.FC = () => {
             </ScrollStack>
           </div>
 
-          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44 py-16 lg:py-24 2xl:py-32 3xl:py-40 4xl:py-48">
+          <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44 pt-12 lg:pt-16 pb-4">
             {/* CLEAN MODULAR NORMATIVE LABORATORY (No Nested Boxes, Borderless Elegance) */}
             <div id="laboratorio-normativo" className="space-y-10">
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-6 border-b border-[var(--border-hairline)]">
@@ -1736,53 +1745,49 @@ export const InstitutionalLandingPage: React.FC = () => {
         <section
           id="tecnologia"
           data-gsap-archetype={SECTION_GSAP_CHOREOGRAPHIES.tecnologia.archetype}
-          className="relative border-b border-[var(--border-hairline)] mesh-gradient-tech py-28 lg:py-40 2xl:py-48 3xl:py-60 4xl:py-72 overflow-hidden"
+          className="relative border-b border-[var(--border-hairline)] bg-[var(--bg-paper)] pt-10 lg:pt-14 pb-20 lg:pb-28 2xl:pb-36 overflow-hidden"
         >
-          {/* Ambient Chromatic Orbs for Frosted Glass Refraction */}
-          <div
-            aria-hidden="true"
-            className="ambient-glass-orb-fjord absolute top-20 right-[12%] w-[520px] h-[520px] rounded-full"
-          />
-          <div
-            aria-hidden="true"
-            className="ambient-glass-orb-sage absolute bottom-16 left-[12%] w-[500px] h-[500px] rounded-full"
-          />
-
           <div className="relative z-10 w-full max-w-[1920px] 3xl:max-w-[2200px] 4xl:max-w-[2560px] mx-auto px-6 sm:px-10 lg:px-16 2xl:px-24 3xl:px-32 4xl:px-44">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 2xl:gap-24 items-start relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 2xl:gap-20 items-start relative z-10">
               {/* Left Column: Engineering Thesis & Live Feature Switcher (5 Columns) */}
-              <div className="lg:col-span-5 space-y-8">
+              <div className="lg:col-span-5 space-y-7">
                 <div className="space-y-3 max-w-prose">
+                  <span className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--accent-editorial)] block">
+                    Engenharia Diagnóstica &amp; Operações
+                  </span>
                   <SplitTextReveal
                     as="h2"
                     text="Recursos reais para a rotina"
                     highlightText="operacional de SST."
-                    className="font-editorial text-4xl sm:text-5xl 2xl:text-6xl font-normal text-[var(--text-primary)] leading-[1.1]"
+                    className="font-editorial text-3xl sm:text-4xl 2xl:text-5xl font-normal text-[var(--text-primary)] leading-[1.12]"
                   />
-                  <p className="text-sm text-[var(--text-secondary)] leading-[1.85]">
+                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
                     Desenvolvida sobre Next.js e AuthService dedicado, a plataforma combina catálogo
                     editorial em Markdown com busca instantânea, ferramentas de estudo individual e
                     governança colaborativa por perfis de acesso.
                   </p>
                 </div>
 
-                {/* Frosted Glass Feature Selector Buttons */}
-                <div className="flex flex-col gap-3">
+                {/* Architectural Feature Tabs */}
+                <div className="space-y-2.5">
                   {[
                     {
                       id: 'search',
-                      title: '01. Busca instantânea MiniSearch (Ctrl+K)',
-                      desc: 'Pesquisa tolerante a erros de digitação em todos os 6 módulos (GRO, eSocial, Eventos, Informações, Coletivo e Tecnologia).',
+                      code: '01',
+                      title: 'Busca instantânea MiniSearch (Ctrl+K)',
+                      desc: 'Pesquisa tolerante a erros em todos os 6 módulos (GRO, eSocial, Eventos, Informações, Coletivo e Tecnologia).',
                     },
                     {
                       id: 'zen',
-                      title: '02. Modo Foco, Fonte Lexend, Grifos & Glossário',
-                      desc: 'Ajuste de tamanho/espaçamento, fonte acessível para dislexia, destaques salvos no navegador, diagramas Mermaid e termos explicados.',
+                      code: '02',
+                      title: 'Modo Foco, Fonte Lexend & Grifos',
+                      desc: 'Ajuste tipográfico para acessibilidade, destaques salvos localmente no navegador e glossário técnico integrado.',
                     },
                     {
                       id: 'collab',
-                      title: '03. Minha Lista, Avaliações, Correções & RBAC',
-                      desc: 'Fila pessoal de leitura, trilhas de onboarding, avaliação de utilidade, sugestão de correção e moderação por Editores e Administradores.',
+                      code: '03',
+                      title: 'Minha Lista, Revisões & Governança RBAC',
+                      desc: 'Fila pessoal de leitura, trilhas de onboarding, sugestão de correções e moderação por auditores técnicos.',
                     },
                   ].map((tab) => {
                     const isActive = activeFeatureTab === tab.id;
@@ -1790,41 +1795,48 @@ export const InstitutionalLandingPage: React.FC = () => {
                       <button
                         key={tab.id}
                         type="button"
-                        data-glass-active={isActive}
-                        onMouseMove={handleCardSpotlightMove}
                         onClick={() =>
                           setActiveFeatureTab(tab.id as 'search' | 'zen' | 'collab')
                         }
-                        className="glass-interactive-tile text-left p-4.5 transition-all"
+                        className={`w-full text-left p-4 rounded-xl border transition-all cursor-pointer ${
+                          isActive
+                            ? 'border-[var(--accent-editorial)] bg-[#2E665A]/5 dark:bg-[#2E665A]/15 shadow-xs'
+                            : 'border-[var(--border-hairline)] bg-black/[0.01] dark:bg-white/[0.01] hover:border-[var(--border-strong)]'
+                        }`}
                       >
-                        <div className="text-xs font-medium text-[var(--text-primary)]">
-                          {tab.title}
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-mono text-xs font-semibold text-[var(--accent-editorial)]">
+                            {tab.code}
+                          </span>
+                          <span className="text-xs font-semibold text-[var(--text-primary)]">
+                            {tab.title}
+                          </span>
                         </div>
-                        <div className="text-xs text-[var(--text-secondary)] mt-1 max-w-prose">
+                        <p className="text-xs text-[var(--text-secondary)] mt-1.5 leading-relaxed pl-6">
                           {tab.desc}
-                        </div>
+                        </p>
                       </button>
                     );
                   })}
                 </div>
 
-                {/* Interactive Frosted Feature Preview Card */}
-                <div className="p-5 rounded-xl atelier-glass space-y-3">
+                {/* Integrated Feature Action Drawer */}
+                <div className="p-5 rounded-xl border border-[var(--border-hairline)] bg-black/[0.02] dark:bg-white/[0.02] space-y-3">
                   {activeFeatureTab === 'search' && (
                     <div className="space-y-3">
-                      <div className="text-xs font-medium text-[var(--text-primary)]">
+                      <div className="text-xs font-semibold text-[var(--text-primary)]">
                         Consulta direta ao acervo técnico
                       </div>
-                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed max-w-prose">
-                        Pressione <strong className="text-[var(--text-primary)]">Ctrl+K</strong> em
+                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                        Pressione <strong className="text-[var(--text-primary)] font-mono">Ctrl+K</strong> em
                         qualquer tela para localizar guias do S-2210, S-2220, S-2240, PGR, LTCAT,
                         e-CAC ou scripts de atendimento.
                       </p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap items-center gap-2.5 pt-1">
                         <button
                           type="button"
                           onClick={() => setCommandPaletteOpen(true)}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium bg-spectral-gradient transition-all cursor-pointer"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium bg-spectral-gradient text-white transition-all cursor-pointer shadow-xs"
                         >
                           <span>Abrir busca rápida (Ctrl+K)</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -1842,24 +1854,24 @@ export const InstitutionalLandingPage: React.FC = () => {
                   {activeFeatureTab === 'zen' && (
                     <div className="space-y-3 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-[var(--text-primary)]">
+                        <span className="font-semibold text-[var(--text-primary)]">
                           Leitura Orientada · Grifos Persistidos
                         </span>
                         <button
                           type="button"
                           onClick={() => setHighlightActive((prev) => !prev)}
-                          className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline cursor-pointer"
+                          className="inline-flex items-center gap-1.5 text-xs text-[var(--accent-editorial)] hover:underline cursor-pointer"
                         >
-                          <Highlighter className="w-3 h-3" />
-                          <span>{highlightActive ? 'Remover grifo' : 'Aplicar grifo'}</span>
+                          <Highlighter className="w-3.5 h-3.5" />
+                          <span>{highlightActive ? 'Remover grifo' : 'Testar grifo'}</span>
                         </button>
                       </div>
-                      <p className="text-[var(--text-secondary)] leading-relaxed max-w-prose">
+                      <p className="text-[var(--text-secondary)] leading-relaxed">
                         Em cada artigo você pode ativar o Modo Foco, alternar para a fonte Lexend e{' '}
                         <span
                           className={
                             highlightActive
-                              ? 'bg-[#234F46]/20 dark:bg-[#68B2A0]/25 text-[var(--text-primary)] px-1 rounded border-b border-[var(--accent-editorial)]'
+                              ? 'bg-[#2E665A]/20 dark:bg-[#68B2A0]/25 text-[var(--text-primary)] px-1 rounded border-b border-[var(--accent-editorial)]'
                               : ''
                           }
                         >
@@ -1871,26 +1883,26 @@ export const InstitutionalLandingPage: React.FC = () => {
                   )}
 
                   {activeFeatureTab === 'collab' && (
-                    <div className="space-y-2.5 text-xs">
-                      <div className="font-medium text-[var(--text-primary)]">
-                        Ciclo de Revisão de 12 Meses &amp; Interações Autenticadas
+                    <div className="space-y-3 text-xs">
+                      <div className="font-semibold text-[var(--text-primary)]">
+                        Governança Técnica &amp; Fila de Leitura
                       </div>
                       <p className="text-[var(--text-secondary)] leading-relaxed">
-                        Leitores autenticados avaliam se o artigo ajudou, enviam sugestões de
-                        correção e organizam trilhas em <strong>Minha Lista</strong> (`/minha-lista`),
-                        enquanto Editores e Administradores moderam o acervo em `/admin`.
+                        Leitores autenticados organizam trilhas em <strong className="text-[var(--text-primary)]">Minha Lista</strong>,
+                        enviam sugestões de correção e acompanham revisões de 12 meses, enquanto
+                        Editores moderam o acervo.
                       </p>
-                      <div className="flex flex-wrap gap-2 pt-1">
+                      <div className="flex flex-wrap items-center gap-2.5 pt-1">
                         <Link
                           href="/minha-lista"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-spectral-gradient text-white"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-spectral-gradient text-white shadow-xs"
                         >
                           <span>Acessar Minha Lista</span>
                           <ArrowUpRight className="w-3.5 h-3.5" />
                         </Link>
                         <Link
                           href="/sobre"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border-hairline)] text-[var(--text-primary)]"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium border border-[var(--border-hairline)] text-[var(--text-primary)] hover:border-[var(--accent-editorial)]"
                         >
                           <span>Conhecer a Arquitetura</span>
                         </Link>
@@ -1900,14 +1912,16 @@ export const InstitutionalLandingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right Column: 12-Tile Frosted Glass Research Matrix */}
-              <div className="lg:col-span-7 space-y-6">
+              {/* Right Column: 12 Technical Dossiers Directory */}
+              <div className="lg:col-span-7 space-y-4">
                 <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] border-b border-[var(--border-hairline)] pb-3">
-                  <span>Índice de dossiês normativos (12 domínios)</span>
-                  <span className="text-[var(--text-muted)]">Selecione um tema para leitura</span>
+                  <span className="font-medium text-[var(--text-primary)]">
+                    Matriz de dossiês normativos (12 domínios)
+                  </span>
+                  <span className="text-[var(--text-muted)]">Clique em um tema para abrir o dossiê</span>
                 </div>
 
-                <div className="gsap-research-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 2xl:gap-5">
+                <div className="gsap-research-grid grid grid-cols-2 sm:grid-cols-3 gap-3 2xl:gap-3.5">
                   {RESEARCH_MATRIX_12.map((tile, idx) => (
                     <button
                       key={tile.code}
@@ -1915,27 +1929,28 @@ export const InstitutionalLandingPage: React.FC = () => {
                       data-testid={`matrix-tile-${tile.code}`}
                       aria-label={`Abrir dossiê normativo ${tile.code}: ${tile.label} (${tile.domain})`}
                       aria-haspopup="dialog"
-                      onMouseMove={handleCardSpotlightMove}
                       onClick={() => {
                         AnalyticsService.trackEvent('dossier_opened', { code: tile.code });
                         setActiveDossierCode(tile.code);
                       }}
-                      className="gsap-research-tile glass-interactive-tile group text-left aspect-square p-4 2xl:p-5 flex flex-col justify-between transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-editorial)]"
+                      className="gsap-research-tile group text-left p-4 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-white/[0.02] hover:border-[var(--accent-editorial)] hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-all flex flex-col justify-between min-h-[118px] cursor-pointer"
                     >
-                      <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
-                        <span className="font-tabular">{String(idx + 1).padStart(2, '0')}</span>
-                        <span>{tile.domain}</span>
+                      <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] font-mono">
+                        <span>{String(idx + 1).padStart(2, '0')}</span>
+                        <span className="uppercase tracking-wider text-[10px] text-[var(--text-secondary)] font-medium">
+                          {tile.domain}
+                        </span>
                       </div>
 
-                      <div className="my-auto py-2">
-                        <div className="font-editorial text-2xl sm:text-3xl font-light text-[var(--text-primary)] group-hover:text-[var(--accent-editorial)] transition-colors">
+                      <div className="my-1.5">
+                        <div className="font-editorial text-2xl font-light text-[var(--text-primary)] group-hover:text-[var(--accent-editorial)] transition-colors leading-tight">
                           {tile.code}
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between gap-1 text-xs text-[var(--text-secondary)] leading-snug">
-                        <span>{tile.label}</span>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      <div className="flex items-center justify-between gap-1 text-xs text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+                        <span className="truncate">{tile.label}</span>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent-editorial)] transition-colors shrink-0" />
                       </div>
                     </button>
                   ))}

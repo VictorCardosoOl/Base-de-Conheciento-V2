@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Check, Printer, Share2 } from 'lucide-react';
+import { ArrowUp, Check, Highlighter, Printer, Share2 } from 'lucide-react';
 import { useShare } from '@/hooks/use-share';
 import { TableOfContents } from './TableOfContents';
 import { ArticleNeighbors } from './ArticleNeighbors';
@@ -9,11 +9,15 @@ import { LazyMount } from '@/components/ui/LazyMount';
 import { ArticleInteractions } from '@/features/content/components/ArticleInteractions';
 import { useReadingProgress } from '@/features/reading/use-reading-progress';
 import { ArticleContent } from './ArticleContent';
+import { ArticleReadingControls } from './ArticleReadingControls';
+import {
+  ReadingExperienceService,
+  type TypographyPreferences,
+} from '@/features/reading/reading-experience-service';
 
 /**
- * Leitura na página do artigo: corpo em superfície quase opaca (contraste AA), índice de
- * vidro flutuante, barra de progresso no topo e ações (compartilhar, PDF, topo) num dock
- * de vidro. O conteúdo já chega sanitizado pelo servidor.
+ * Leitura na página do artigo: caderno editorial sobre superfície de papel arquival,
+ * controles de tipografia/medida/foco no topo, sumário lateral dinâmico e dock discreto.
  */
 export function ArticleReader({
   htmlContent,
@@ -29,6 +33,10 @@ export function ArticleReader({
   const bodyRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const [showDock, setShowDock] = useState(false);
+  const [isZenMode, setIsZenMode] = useState(false);
+  const [typography, setTypography] = useState<TypographyPreferences>(() =>
+    ReadingExperienceService.getTypography()
+  );
   const { shareContent, shareFeedback } = useShare();
 
   // Progresso escrito direto no DOM; o dock só re-renderiza quando aparece/some.
@@ -56,7 +64,7 @@ export function ArticleReader({
   }, []);
 
   const dockButton =
-    'w-11 h-11 rounded-full flex items-center justify-center text-text-main hover:bg-[var(--glass-bg-hover)] transition-[transform,background-color] duration-300 ease-[var(--ease-elastic)] active:scale-90 glass-focus';
+    'h-9 px-3 rounded-md inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-paper-warm)] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-editorial)]';
 
   return (
     <>
@@ -70,39 +78,75 @@ export function ArticleReader({
           aria-valuemin={0}
           aria-valuemax={100}
           data-testid="reading-progress"
-          className="h-full origin-left bg-text-main"
+          className="h-full origin-left bg-[var(--accent-editorial)]"
           style={{ transform: 'scaleX(0)' }}
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] 2xl:grid-cols-[1fr_300px] gap-8 xl:gap-14 items-start w-full">
+      {/* Barra Editorial do Leitor (Tipografia, Largura da Coluna, Modo Foco e Dica de Marca-texto) */}
+      <div className="flex flex-wrap items-center justify-between gap-3 py-3 px-4 sm:px-5 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] no-print">
+        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+          <Highlighter size={14} className="text-[var(--accent-editorial)] shrink-0" aria-hidden="true" />
+          <span>
+            Selecione qualquer trecho do texto para destacar no seu caderno local
+          </span>
+        </div>
+        <ArticleReadingControls
+          isZenMode={isZenMode}
+          onToggleZenMode={() => setIsZenMode((prev) => !prev)}
+          typography={typography}
+          onTypographyChange={setTypography}
+        />
+      </div>
+
+      <div
+        className={`grid grid-cols-1 ${
+          !isZenMode ? 'xl:grid-cols-[1fr_270px] 2xl:grid-cols-[1fr_310px]' : ''
+        } gap-8 xl:gap-14 items-start w-full`}
+      >
         <div
           ref={bodyRef}
           data-reveal
-          className="min-w-0 w-full transition-colors"
+          className={`min-w-0 w-full rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] px-6 sm:px-10 md:px-14 lg:px-16 py-8 sm:py-12 transition-all ${
+            isZenMode ? 'max-w-4xl mx-auto shadow-sm' : ''
+          }`}
         >
-          <div className="prose dark:prose-invert max-w-none prose-lg text-text-body font-sans leading-relaxed">
-            <ArticleContent htmlContent={htmlContent} articleId={articleId} />
+          <div className="max-w-none text-[var(--text-body)]">
+            <ArticleContent
+              htmlContent={htmlContent}
+              articleId={articleId}
+              typography={typography}
+            />
           </div>
         </div>
-        <div className="hidden xl:block">
-          <TableOfContents containerRef={bodyRef} scrollRoot="viewport" />
-        </div>
+        {!isZenMode && (
+          <div className="hidden xl:block">
+            <TableOfContents containerRef={bodyRef} scrollRoot="viewport" />
+          </div>
+        )}
       </div>
 
-      <ArticleNeighbors articleId={articleId} />
-      <RelatedArticles articleId={articleId} />
+      {!isZenMode && (
+        <>
+          <ArticleNeighbors articleId={articleId} />
+          <RelatedArticles articleId={articleId} />
+        </>
+      )}
       <LazyMount>
         <ArticleInteractions articleId={articleId} articleTitle={title} contentRef={bodyRef} />
       </LazyMount>
 
       {/* Dock de ações flutuante */}
       <div
-        className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[45] no-print transition-opacity duration-300 ${
+        className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[45] no-print transition-opacity duration-200 ${
           showDock ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
-        <div role="toolbar" aria-label="Ações do artigo" className="glass-strong !bg-bg-island !rounded-[20px] border border-border flex items-center gap-1 p-1.5 shadow-[var(--glass-shadow-2)]">
+        <div
+          role="toolbar"
+          aria-label="Ações do artigo"
+          className="bg-[var(--bg-island)] rounded-lg border border-[var(--border-hairline)] flex items-center gap-1 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+        >
           <button
             type="button"
             onClick={() => shareContent(title, summary, window.location.href)}
@@ -110,7 +154,8 @@ export function ArticleReader({
             className={dockButton}
             tabIndex={showDock ? 0 : -1}
           >
-            {shareFeedback ? <Check size={18} aria-hidden="true" /> : <Share2 size={18} aria-hidden="true" />}
+            {shareFeedback ? <Check size={15} aria-hidden="true" /> : <Share2 size={15} aria-hidden="true" />}
+            <span className="hidden sm:inline">{shareFeedback ? 'Copiado' : 'Compartilhar'}</span>
           </button>
           <button
             type="button"
@@ -119,9 +164,10 @@ export function ArticleReader({
             className={dockButton}
             tabIndex={showDock ? 0 : -1}
           >
-            <Printer size={18} aria-hidden="true" />
+            <Printer size={15} aria-hidden="true" />
+            <span className="hidden sm:inline">PDF</span>
           </button>
-          <span aria-hidden="true" className="w-px h-6 bg-border mx-1" />
+          <span aria-hidden="true" className="w-px h-5 bg-[var(--border-hairline)] mx-1" />
           <button
             type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -129,10 +175,12 @@ export function ArticleReader({
             className={dockButton}
             tabIndex={showDock ? 0 : -1}
           >
-            <ArrowUp size={18} aria-hidden="true" />
+            <ArrowUp size={15} aria-hidden="true" />
+            <span className="hidden sm:inline">Topo</span>
           </button>
         </div>
       </div>
     </>
   );
 }
+

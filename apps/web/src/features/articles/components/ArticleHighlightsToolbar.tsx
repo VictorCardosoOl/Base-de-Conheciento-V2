@@ -79,40 +79,45 @@ export const ArticleHighlightsToolbar: React.FC<
         top: `${position.y}px`,
         transform: 'translate(-50%, -100%)',
       }}
-      className="glass-strong glass-chroma !fixed z-50 flex items-center gap-1.5 p-1.5 !rounded-full animate-fade-in-up"
+      className="fixed z-50 flex items-center gap-2 px-3 py-1.5 rounded-md border border-[var(--border-hairline)] bg-[var(--bg-island)] shadow-[0_8px_24px_rgba(0,0,0,0.14)] animate-fade-in-up"
       onMouseDown={(e) => e.preventDefault()} // Impede perder a seleção ao clicar
     >
       {savedSuccess ? (
-        <div className="flex items-center gap-1 px-3 py-1 text-xs text-emerald-600 font-medium">
+        <div className="flex items-center gap-1.5 px-2 py-0.5 text-xs text-[var(--accent-editorial)] font-medium">
           <Check size={14} />
-          <span>Destacado</span>
+          <span>Trecho destacado</span>
         </div>
       ) : (
         <>
-          <div className="flex items-center pl-2 pr-1 text-text-muted">
-            <Highlighter size={13} />
+          <div className="flex items-center gap-1.5 pr-2 border-r border-[var(--border-hairline)] text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
+            <Highlighter size={12} />
+            <span>Destacar</span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
+              type="button"
               onClick={() => applyHighlight('yellow')}
-              title="Marca-texto Amarelo"
-              className="w-5 h-5 rounded-full bg-amber-300 hover:scale-110 transition-transform border border-amber-400"
+              title="Marca-texto Âmbar"
+              className="w-4 h-4 rounded-sm bg-amber-300/90 hover:scale-110 transition-transform border border-amber-500/50"
             />
             <button
+              type="button"
               onClick={() => applyHighlight('green')}
-              title="Marca-texto Verde"
-              className="w-5 h-5 rounded-full bg-emerald-300 hover:scale-110 transition-transform border border-emerald-400"
+              title="Marca-texto Salva"
+              className="w-4 h-4 rounded-sm bg-emerald-300/90 hover:scale-110 transition-transform border border-emerald-500/50"
             />
             <button
+              type="button"
               onClick={() => applyHighlight('blue')}
               title="Marca-texto Azul"
-              className="w-5 h-5 rounded-full bg-sky-300 hover:scale-110 transition-transform border border-sky-400"
+              className="w-4 h-4 rounded-sm bg-sky-300/90 hover:scale-110 transition-transform border border-sky-500/50"
             />
             <button
+              type="button"
               onClick={() => applyHighlight('pink')}
-              title="Marca-texto Rosa"
-              className="w-5 h-5 rounded-full bg-pink-300 hover:scale-110 transition-transform border border-pink-400"
+              title="Marca-texto Terracota"
+              className="w-4 h-4 rounded-sm bg-rose-300/90 hover:scale-110 transition-transform border border-rose-500/50"
             />
           </div>
         </>
@@ -120,3 +125,4 @@ export const ArticleHighlightsToolbar: React.FC<
     </div>
   );
 };
+

@@ -15,159 +15,125 @@
  * - estados vêm de atributos (data-*), sem estilos inline por quadro.
  */
 
-/* ── Cabeçalho ───────────────────────────────────────────────────────────── */
+/* ── Cabeçalho (Sistema de cápsulas flutuantes PillNav) ──────────────────── */
 .app-header {
-  --hdr-h: 3.5rem;
+  --hdr-h: 44px;
+  --hdr-surface: rgba(255, 255, 255, 0.72);
+  --hdr-surface-border: rgba(15, 23, 42, 0.1);
+  --hdr-surface-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 20px 50px -24px rgba(15, 23, 42, 0.25),
+    0 2px 6px rgba(15, 23, 42, 0.06);
+  --hdr-pill-bg: #ffffff;
+  --hdr-pill-border: rgba(15, 23, 42, 0.08);
+  --hdr-pill-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(15, 23, 42, 0.06);
+  --hdr-pill-hover-bg: rgba(15, 23, 42, 0.06);
   position: fixed;
-  top: 12px;
-  left: 12px;
-  right: 12px;
+  top: 14px;
+  left: 16px;
+  right: 16px;
   z-index: 44;
   margin: 0 auto;
-  max-width: min(2200px, calc(100vw - 32px));
-  height: var(--hdr-h);
+  max-width: min(1480px, calc(100vw - 32px));
+  min-height: var(--hdr-h);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0 0.5rem 0 0.5rem;
-  border-radius: 9999px;
+  justify-content: space-between;
+  gap: 0.75rem;
   color: var(--text-main);
-  isolation: isolate;
-  contain: layout style;
+  pointer-events: none;
   transform: translate3d(0, 0, 0);
-  transition:
-    transform 480ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
 }
 
-/* Material do cabeçalho numa camada própria: a troca de densidade ao rolar é só
-   opacidade dessa camada (barata), e não uma mudança de blur. */
-.app-header::before,
-.app-header::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: -1;
+html.dark .app-header,
+[data-theme='dark'] .app-header {
+  --hdr-surface: rgba(18, 18, 23, 0.72);
+  --hdr-surface-border: rgba(255, 255, 255, 0.1);
+  --hdr-surface-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 20px 50px -20px rgba(0, 0, 0, 0.65),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+  --hdr-pill-bg: #1c1d24;
+  --hdr-pill-border: rgba(255, 255, 255, 0.07);
+  --hdr-pill-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.45);
+  --hdr-pill-hover-bg: rgba(255, 255, 255, 0.08);
 }
 
-.app-header::before {
-  background: linear-gradient(var(--glass-tint), var(--glass-tint)), var(--glass-bg-strong);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  box-shadow: var(--glass-specular), 0 4px 20px -2px rgba(0, 0, 0, 0.05);
-  opacity: 0.85;
-  transition: 
-    opacity 320ms ease,
-    box-shadow 320ms cubic-bezier(0.16, 1, 0.3, 1);
+.app-header-left,
+.app-header-actions {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
 }
 
-/* Borda luminosa */
-.app-header::after {
-  padding: 1px;
-  background: var(--glass-edge);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+.app-header-left {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: calc(100% - 210px);
 }
 
-.app-header[data-scrolled]::before {
-  opacity: 1;
-}
-
-.app-header[data-scrolled] {
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
-}
-
-.app-header[data-scrolled]::before {
-  opacity: 0.96;
+.app-header-left .pill-nav__bar {
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 /* Rolando para baixo: o cabeçalho sai de cena (só transform). */
 .app-header[data-hidden] {
-  transform: translate3d(0, calc(-100% - 20px), 0);
+  transform: translate3d(0, calc(-100% - 24px), 0);
 }
 
-.app-header-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 2.75rem;
-  padding: 0.25rem 0.65rem 0.25rem 0.4rem;
-  border-radius: 9999px;
-  font-family: var(--font-sans);
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--text-main);
-  white-space: nowrap;
-  transition: 
-    background-color 220ms ease,
-    transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.app-header-brand:hover {
-  background: var(--glass-bg-hover);
-  transform: scale(1.02);
-}
-
-.app-header-brand:active {
-  transform: scale(0.97);
-}
-
-.app-header-brand-mark {
-  flex: none;
-}
-
-.app-header-brand-accent {
-  color: var(--mesh-1);
-}
-
-.app-header-brand:focus-visible {
-  outline: 2px solid var(--mesh-1);
-  outline-offset: 2px;
-}
-
+/* Cápsula de ações à direita (mesma superfície de vidro do PillNav) */
 .app-header-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 0.15rem;
+  height: var(--hdr-h);
+  padding: 4px;
+  gap: 4px;
+  border-radius: 999px;
+  background: var(--hdr-surface);
+  border: 1px solid var(--hdr-surface-border);
+  box-shadow: var(--hdr-surface-shadow);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
 }
 
-/* Botão do menu: duas barras que viram um X (só transform) */
-/* Botão do menu: visual sólido, estável e elegante */
+/* Botão do menu em cápsula PillNav à esquerda */
 .nav-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  height: 2.5rem;
-  padding: 0 0.95rem 0 0.8rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
+  gap: 0.55rem;
+  height: var(--hdr-h);
+  padding: 0 1rem 0 0.9rem;
+  border-radius: 999px;
+  font-size: 13px;
   font-weight: 500;
+  letter-spacing: -0.01em;
   color: var(--text-main);
-  background: color-mix(in srgb, var(--glass-bg-strong) 75%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text-main) 10%, transparent);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  background: var(--hdr-surface);
+  border: 1px solid var(--hdr-surface-border);
+  box-shadow: var(--hdr-surface-shadow);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
   cursor: pointer;
   user-select: none;
   transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
     background-color 200ms ease,
     border-color 200ms ease,
     box-shadow 200ms ease;
 }
 
 .nav-toggle:hover {
-  background: var(--glass-bg-hover);
-  border-color: color-mix(in srgb, var(--text-main) 18%, transparent);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--text-main) 20%, transparent);
 }
 
 .nav-toggle:active {
-  background: color-mix(in srgb, var(--text-main) 8%, transparent);
+  transform: scale(0.97);
 }
 
 .nav-toggle:focus-visible {
@@ -183,8 +149,8 @@
 
 .nav-toggle-icon {
   position: relative;
-  width: 16px;
-  height: 12px;
+  width: 15px;
+  height: 11px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -193,8 +159,8 @@
 .nav-toggle-icon > span {
   display: block;
   width: 100%;
-  height: 2px;
-  border-radius: 2px;
+  height: 1.75px;
+  border-radius: 999px;
   background: currentColor;
   transform-origin: center;
   transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease;
@@ -209,36 +175,39 @@
 }
 
 .nav-toggle[aria-expanded='true'] .nav-toggle-icon > span:first-child {
-  transform: translateY(5px) rotate(45deg);
+  transform: translateY(4.6px) rotate(45deg);
 }
 
 .nav-toggle[aria-expanded='true'] .nav-toggle-icon > span:last-child {
-  transform: translateY(-5px) rotate(-45deg);
+  transform: translateY(-4.6px) rotate(-45deg);
 }
 
-/* Botões redondos (busca, alertas, tema, lista, conta) */
+/* Botões redondos dentro da cápsula (busca, alertas, tema, lista, conta) */
 .nav-icon-button {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 9999px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
   color: var(--text-main);
+  background: var(--hdr-pill-bg);
+  border: 1px solid var(--hdr-pill-border);
+  box-shadow: var(--hdr-pill-shadow);
   transition:
     transform var(--dur-fast) var(--ease-out-expo),
-    background-color var(--dur-fast) ease;
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease;
 }
 
 .nav-icon-button:hover {
-  background: var(--glass-bg-hover);
-  transform: translateY(-1px) scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: var(--hdr-pill-hover-bg);
+  transform: translateY(-1px);
 }
 
 .nav-icon-button:active {
-  transform: scale(0.92);
+  transform: scale(0.93);
 }
 
 .nav-icon-button:focus-visible {
@@ -248,20 +217,20 @@
 
 .nav-badge {
   position: absolute;
-  top: 0.15rem;
-  right: 0.1rem;
-  min-width: 1.1rem;
-  height: 1.1rem;
-  padding: 0 0.3rem;
+  top: -2px;
+  right: -2px;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  padding: 0 0.28rem;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   color: #fff;
   background: var(--mesh-1);
-  box-shadow: 0 0 0 2px var(--bg-main);
+  box-shadow: 0 0 0 2px var(--hdr-pill-bg);
 }
 
 /* Dica: aparece no hover/foco; vidro quase opaco (desfoque aninhado não funciona) */
@@ -276,8 +245,8 @@
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.35rem 0.7rem;
-  border-radius: 9999px;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
   color: var(--text-main);
   background: color-mix(in srgb, var(--bg-island) 96%, transparent);
   box-shadow: var(--glass-specular), var(--glass-shadow-1);
@@ -357,7 +326,7 @@
   width: min(380px, calc(100vw - 24px));
   display: flex;
   flex-direction: column;
-  border-radius: 28px;
+  border-radius: 8px;
   color: var(--text-main);
   isolation: isolate;
   contain: layout paint style;
@@ -441,7 +410,7 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  border-radius: 16px;
+  border-radius: 6px;
   position: relative;
   transition:
     background-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -489,8 +458,8 @@
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
-  padding: 0.1rem 0.5rem;
-  border-radius: 9999px;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
   background: color-mix(in srgb, var(--text-main) 6%, transparent);
 }
 
@@ -502,7 +471,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
+  border-radius: 6px;
   color: var(--text-muted);
   transition:
     background-color var(--dur-fast) ease,
@@ -619,8 +588,8 @@
   gap: 0.6rem;
   width: min(24rem, 38vw);
   height: 2.5rem;
-  padding: 0 0.35rem 0 0.9rem;
-  border-radius: 9999px;
+  padding: 0 0.35rem 0 0.85rem;
+  border-radius: 6px;
   background: color-mix(in srgb, var(--bg-island) 92%, transparent);
   border: 1px solid color-mix(in srgb, var(--text-main) 12%, transparent);
   box-shadow: var(--glass-specular);
@@ -639,7 +608,7 @@
   width: 2rem;
   height: 2rem;
   flex-shrink: 0;
-  border-radius: 9999px;
+  border-radius: 4px;
   color: var(--text-muted);
   transition:
     background-color var(--dur-fast) ease,
@@ -701,7 +670,8 @@
 }
 
 /* ── Modo lite ───────────────────────────────────────────────────────────── */
-html[data-glass='lite'] .app-header::before,
+html[data-glass='lite'] .nav-toggle,
+html[data-glass='lite'] .app-header-actions,
 html[data-glass='lite'] .nav-drawer {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -711,22 +681,27 @@ html[data-glass='lite'] .nav-drawer {
 /* ── Telas estreitas ─────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .app-header {
-    top: 8px;
-    left: 8px;
-    right: 8px;
+    top: 10px;
+    left: 10px;
+    right: 10px;
   }
 
   .nav-drawer {
-    top: calc(8px + 3.5rem + 8px);
+    top: calc(10px + 44px + 10px);
     left: 8px;
     right: 8px;
     bottom: 8px;
     width: auto;
   }
 
-  .nav-toggle-label,
-  .app-header-brand-text {
+  .nav-toggle-label {
     display: none;
+  }
+
+  .nav-toggle {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
   }
 
   /* Busca aberta: os outros itens saem e o campo ocupa a largura toda */
@@ -756,12 +731,8 @@ html[data-glass='lite'] .nav-drawer {
 
 @media (max-width: 420px) {
   .app-header .nav-icon-button {
-    width: 2.25rem;
-    height: 2.25rem;
-  }
-
-  .nav-toggle {
-    padding: 0 0.7rem;
+    width: 32px;
+    height: 32px;
   }
 }
 

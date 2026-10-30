@@ -340,10 +340,13 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
                 {/* Grid de Conteúdo Principal + Índice Dinâmico (ToC) */}
                 <div className="px-4 sm:px-8 md:px-12 2xl:px-16 py-6 md:py-10 mx-auto w-full">
                   <div
-                    className={`grid grid-cols-1 ${!isZenMode ? 'xl:grid-cols-[1fr_260px] 2xl:grid-cols-[1fr_300px]' : ''} gap-8 xl:gap-14 items-start w-full`}
+                    className={`grid grid-cols-1 ${!isZenMode ? 'xl:grid-cols-[1fr_270px] 2xl:grid-cols-[1fr_310px]' : ''} gap-8 xl:gap-14 items-start w-full`}
                   >
-                    {/* Corpo do texto: fluido, minimalista, editorial */}
-                    <div ref={bodyRef} className="min-w-0 w-full">
+                    {/* Corpo do texto: folha de papel arquival editorial */}
+                    <div
+                      ref={bodyRef}
+                      className="min-w-0 w-full rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-paper)] dark:bg-[var(--bg-island)] px-6 sm:px-10 md:px-14 lg:px-16 py-8 sm:py-12"
+                    >
                       {item && (
                         <ModalArticleContent
                           article={item}
